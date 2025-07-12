@@ -1,3 +1,4 @@
 .env
 __pycache__
 **/minitap.egg-info
+.vscode/settings.json
