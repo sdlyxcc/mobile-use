@@ -34,6 +34,9 @@ def create_gif_from_trace_folder(trace_folder_path: Path):
             image = Image.open(f).convert("RGB")
             images.append(image)
 
+    if len(images) == 0:
+        return
+
     gif_path = trace_folder_path / "trace.gif"
     images[0].save(gif_path, save_all=True, append_images=images[1:], loop=0)
     print("GIF created at " + str(gif_path))
