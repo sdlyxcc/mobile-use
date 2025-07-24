@@ -12,6 +12,7 @@ from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
+
 from minitap.agents.handle_screenshot import handle_screenshot
 from minitap.agents.history_cleanup import history_cleanup
 from minitap.agents.orchestrator.orchestrator import orchestrator
@@ -124,7 +125,9 @@ def summarizer(state: State):
     }
 
 
-async def get_graph() -> CompiledStateGraph:
+async def get_graph(
+    provider: Optional[str] = None, model: Optional[str] = None
+) -> CompiledStateGraph:
     graph_builder = StateGraph(State)
 
     tools = ALL_TOOLS

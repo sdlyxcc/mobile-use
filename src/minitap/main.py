@@ -5,13 +5,22 @@ from pathlib import Path
 from typing import Any, Optional
 
 import typer
+from click import Choice
 from langchain_core.messages import AIMessage
+from rich.console import Console
 from typing_extensions import Annotated
 
 from minitap.client.adb import adb, get_device
 from minitap.constants import RECURSION_LIMIT
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
+from minitap.services.llm import (
+    AVAILABLE_PROVIDERS,
+    DEFAULT_MODEL,
+    DEFAULT_PROVIDER,
+)
+from minitap.utils.cli_helpers import validate_model_for_provider
+from minitap.utils.cli_selection import display_llm_config, select_provider_and_model
 from minitap.utils.media import (
     create_gif_from_trace_folder,
     create_steps_json_from_trace_folder,
@@ -34,6 +43,8 @@ async def run_automation(
     goal: str,
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
+    provider: Optional[str] = None,
+    model: Optional[str] = None,
 ):
     start_time = time.time()
     traces_output_path = Path(traces_output_path_str).resolve()
@@ -65,12 +76,14 @@ async def run_automation(
         current_subgoal=None,
         subgoal_history=[],
         memory=None,
+        llm_provider=provider,
+        llm_model=model,
     ).model_dump()
 
     success = False
     try:
         print(f"Invoking graph with input: {graph_input}", flush=True)
-        result = await (await get_graph()).ainvoke(
+        result = await (await get_graph(provider=provider, model=model)).ainvoke(
             input=graph_input, config={"recursion_limit": RECURSION_LIMIT}
         )
 
@@ -122,11 +135,61 @@ def main(
             help="The path to save the traces.",
         ),
     ] = "traces",
+    provider: Annotated[
+        Optional[str],
+        typer.Option(
+            "--provider",
+            help=f"LLM provider to use. Available: {', '.join(AVAILABLE_PROVIDERS)}. "
+            f"Default: {DEFAULT_PROVIDER} (from LLM_PROVIDER env var)",
+            click_type=Choice(AVAILABLE_PROVIDERS, case_sensitive=False),
+        ),
+    ] = None,
+    model: Annotated[
+        Optional[str],
+        typer.Option(
+            "--model",
+            help=f"Model name to use. Default: {DEFAULT_MODEL} (from LLM_MODEL env var). "
+            f"Available models vary by provider - use --provider first to see options",
+        ),
+    ] = None,
 ):
     """
     Run the Minitap agent to automate tasks on a mobile device.
     """
-    asyncio.run(run_automation(goal, test_name, traces_path))
+
+    if provider and not model:
+        typer.echo(f"\nAvailable models for {provider}:")
+        from minitap.services.llm import AVAILABLE_MODELS
+
+        for model_name in AVAILABLE_MODELS[provider]:
+            typer.echo(f"  - {model_name}")
+        typer.echo("\nPlease specify a model with --model <model_name>")
+        raise typer.Exit(code=0)
+
+    console = Console()
+    from minitap.services.llm import (
+        AVAILABLE_MODELS,
+        AVAILABLE_PROVIDERS,
+        DEFAULT_MODEL,
+        DEFAULT_PROVIDER,
+    )
+
+    final_provider, final_model = select_provider_and_model(
+        console=console,
+        available_providers=AVAILABLE_PROVIDERS,
+        available_models=AVAILABLE_MODELS,
+        default_provider=DEFAULT_PROVIDER,
+        default_model=DEFAULT_MODEL,
+        provider=provider,
+        model=model,
+    )
+
+    if final_provider and final_model:
+        validate_model_for_provider(final_provider, final_model)
+
+    display_llm_config(console, final_provider, final_model)
+
+    asyncio.run(run_automation(goal, test_name, traces_path, final_provider, final_model))
 
 
 def cli():

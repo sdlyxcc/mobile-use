@@ -20,3 +20,5 @@ class State(AgentStatePydantic):
     subgoal_history: Annotated[list[Subgoal], "History of subgoals"]
     current_subgoal: Annotated[Optional[Subgoal], "Current subgoal"]
     memory: Annotated[Optional[str], "Your long term memory"]
+    llm_provider: Annotated[Optional[str], "LLM provider to use (openai, google, openrouter)"]
+    llm_model: Annotated[Optional[str], "LLM model to use"]
