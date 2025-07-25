@@ -9,6 +9,7 @@ load_dotenv(verbose=True)
 class Settings(BaseSettings):
     GOOGLE_API_KEY: str | None = os.environ.get("GOOGLE_API_KEY")
     OPENAI_API_KEY: str | None = os.environ.get("OPENAI_API_KEY")
+    XAI_API_KEY: str | None = os.environ.get("XAI_API_KEY")
 
     LANGCHAIN_API_KEY: str | None = os.environ.get("LANGCHAIN_API_KEY")
     LANGSMITH_TRACING: str | None = os.environ.get("LANGSMITH_TRACING")

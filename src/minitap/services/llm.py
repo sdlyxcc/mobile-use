@@ -27,3 +27,13 @@ def get_openai_llm(
         temperature=temperature,
     )
     return client
+
+
+def get_grok_llm() -> ChatOpenAI:
+    client = ChatOpenAI(
+        model="grok-4",
+        openai_api_key=settings.XAI_API_KEY,  # type: ignore[reportGeneralTypeIssues]
+        temperature=1,
+        base_url="https://api.x.ai/v1",
+    )
+    return client
