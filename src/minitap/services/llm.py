@@ -53,7 +53,6 @@ def get_openai_llm(
     return client
 
 
-<<<<<<< HEAD
 class ChatOpenRouter(ChatOpenAI):
     """ChatOpenAI wrapper preconfigured for the OpenRouter endpoint."""
 
@@ -70,20 +69,30 @@ def get_openrouter_llm(model_name: str, temperature: float = 1):
     return client
 
 
+def get_grok_llm() -> ChatOpenAI:
+    client = ChatOpenAI(
+        model="grok-4",
+        openai_api_key=settings.XAI_API_KEY,  # type: ignore[reportGeneralTypeIssues]
+        temperature=1,
+        base_url="https://api.x.ai/v1",
+    )
+    return client
+
+
 def get_llm(temperature: float = 1):
     """Get LLM instance using provider/model from context, settings, or defaults.
-    
+
     This is the single entry point for LLM selection. It automatically:
     1. Checks ContextVar for provider/model (set by CLI or programmatically)
     2. Falls back to environment settings if available
     3. Uses hardcoded defaults as final fallback
     """
     context_provider, context_model = get_llm_context()
-    
+
     # Use context values if available, otherwise fall back to settings/defaults
     provider = cast(LLMProvider, context_provider or (settings.LLM_PROVIDER or DEFAULT_PROVIDER))
     model_name = cast(LLMModel, context_model or (settings.LLM_MODEL or DEFAULT_MODEL))
-    
+
     return _create_llm(provider, model_name, temperature)
 
 
@@ -118,13 +127,3 @@ def get_llm_legacy(provider: LLMProvider, model_name: LLMModel, temperature: flo
 def get_default_llm(temperature: float = 1):
     """Legacy function - prefer get_llm()."""
     return get_llm(temperature)
-=======
-def get_grok_llm() -> ChatOpenAI:
-    client = ChatOpenAI(
-        model="grok-4",
-        openai_api_key=settings.XAI_API_KEY,  # type: ignore[reportGeneralTypeIssues]
-        temperature=1,
-        base_url="https://api.x.ai/v1",
-    )
-    return client
->>>>>>> main

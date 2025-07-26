@@ -44,12 +44,7 @@ async def run_automation(
     goal: str,
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
-<<<<<<< HEAD
-    provider: Optional[str] = None,
-    model: Optional[str] = None,
-=======
     graph_config_callbacks: Optional[list] = [],
->>>>>>> main
 ):
     start_time = time.time()
     traces_output_path = Path(traces_output_path_str).resolve()
@@ -185,7 +180,7 @@ def main(
 
     display_llm_config(console, final_provider, final_model)
 
-    asyncio.run(run_automation(goal, test_name, traces_path, final_provider, final_model))
+    asyncio.run(run_automation(goal, test_name, traces_path))
 
 
 def cli():
