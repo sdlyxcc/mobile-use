@@ -3,10 +3,11 @@ from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
+from typing_extensions import Annotated
+
 from minitap.agents.hopper.hopper import HopperOutput, hopper
 from minitap.client.adb import get_device
 from minitap.graph.state import State
-from typing_extensions import Annotated
 
 
 @tool
@@ -26,8 +27,6 @@ async def list_packages(
             initial_goal=state.initial_goal,
             messages=state.messages,
             data=output,
-            provider=state.llm_provider,
-            model=state.llm_model,
         )
     except Exception as e:
         print("Failed to extract insights from data: " + str(e))
