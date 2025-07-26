@@ -142,7 +142,7 @@ def main(
             f"Default: {DEFAULT_PROVIDER} (from LLM_PROVIDER env var)",
             click_type=Choice(AVAILABLE_PROVIDERS, case_sensitive=False),
         ),
-    ] = None,
+    ] = DEFAULT_PROVIDER,
     model: Annotated[
         Optional[str],
         typer.Option(
@@ -150,7 +150,7 @@ def main(
             help=f"Model name to use. Default: {DEFAULT_MODEL} (from LLM_MODEL env var). "
             f"Available models vary by provider - use --provider first to see options",
         ),
-    ] = None,
+    ] = DEFAULT_MODEL,
 ):
     """
     Run the Minitap agent to automate tasks on a mobile device.
