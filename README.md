@@ -1,52 +1,67 @@
 # Project Setup
 
-1. **Create & activate the virtual environment**
+### 1. **Create & activate the virtual environment**
 
-   ```bash
-   uv venv                # uv reads .python-version → uses Python 3.12.2
-   # macOS/Linux:
-   source .venv/bin/activate
+```bash
+uv venv                # uv reads .python-version → uses Python 3.12.2
+# macOS/Linux:
+source .venv/bin/activate
 
-   # Windows:
-   .venv\Scripts\activate
-   ```
+# Windows:
+.venv\Scripts\activate
+```
 
-2. **Install dependencies**
+### 2. **Install dependencies**
 
-   ```bash
-   # Install project dependencies
-   uv pip install -r requirements.txt
-   # Install dev dependencies
-   uv pip install -e ".[dev]"
-   # Install & link the project
-   uv pip install -e .
-   ```
+```bash
+# Install project dependencies
+uv pip install -r requirements.txt
+# Install dev dependencies
+uv pip install -e ".[dev]"
+# Install & link the project
+uv pip install -e .
+```
 
-3. **Set the environment variables**
+### 3. **Set the environment variables**
 
-   Fill the `.env` file following the `.env.example` file.
+Fill the `.env` file by following the `.env.example` template.
 
-4. **Run the project**
+You can use any supported model from the following providers:
 
-   > 💡 **Note:** If you did not set a model name and provider in your environment variables, a selection menu will appear to help you choose which one to use for running `mobile-use`.
+- **OpenAI** — e.g., `o3` (recommended)
+- **Google** — e.g., `gemini-2.5-pro` (recommended)
+- **XAI** — e.g., `grok-4` (recommended)
+- **OpenRouter:**
+  > You can choose from many advanced models like:
+  >
+  > - `moonshotai/kimi-k2`
+  > - `meta-llama/llama-4-maverick`
+  > - `meta-llama/llama-4-scout`
+  >
+  > However, the models available to you depend on what you've **enabled in your [OpenRouter dashboard](https://openrouter.ai/)**.
+  > Make sure to activate any models you want to use before running the project.
 
-   ```bash
-   python ./src/minitap/main.py "Go in settings, check my current battery level"
-   ```
+### 4. **Run the project**
 
-5. **Exit the virtual environment**
+> 💡 **Note:** If you did not set a model name and provider in your environment variables, a selection menu will appear to help you choose which one to use for running `mobile-use`.
 
-   ```bash
-   deactivate
-   ```
+```bash
+python ./src/minitap/main.py "Go in settings, check my current battery level"
+```
+
+### 5. **Exit the virtual environment**
+
+```bash
+deactivate
+```
 
 ## Recommended Development VS Code Setup
 
-1.  **Install the recommended extensions**
+### 1. **Install the recommended extensions**
 
 This repository includes a list of recommended VS Code extensions in the `.vscode/extensions.json` file. When you open this project in VS Code, you will be prompted to install these extensions. They are highly recommended to ensure a consistent development experience and to take full advantage of the project's tooling (like Ruff).
 
-2. **Configure the IDE Python interpreter & Ruff**
+### 2. **Configure the IDE Python interpreter & Ruff**
 
 Create a `.vscode/settings.json` file and add the following configurations:
 
