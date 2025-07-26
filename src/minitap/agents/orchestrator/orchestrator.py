@@ -4,6 +4,7 @@ from pathlib import Path
 from jinja2 import Template
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
+
 from minitap.graph.state import State
 from minitap.services.llm import get_llm
 from minitap.tools.index import ALL_TOOLS
@@ -36,11 +37,8 @@ async def orchestrator(state: State):
     ]
     print(f"[TIMING] Prepared messages at {time.time() - start_time}", flush=True)
     maestro_tools = await get_maestro_tools(return_all=False)
-    
-    # Get LLM from context (set by main.py)
-    base_llm = get_llm()
-    
-    llm = base_llm.bind_tools(
+
+    llm = get_llm().bind_tools(
         tools=ALL_TOOLS + maestro_tools,
         tool_choice="auto",
     )

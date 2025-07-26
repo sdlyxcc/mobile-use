@@ -5,30 +5,28 @@ Uses ContextVar to avoid prop drilling and maintain clean function signatures.
 """
 
 from contextvars import ContextVar
+
 from typing_extensions import Literal, Optional
 
 # Type definitions for providers and models
-LLMProvider = Literal["openai", "google", "openrouter", "grok"]
+LLMProvider = Literal["openai", "google", "openrouter", "xai"]
 LLMModel = Literal[
     # OpenAI models
     "o3",
-    # Google models  
+    "gpt-4.1",
+    # Google models
     "gemini-2.5-pro",
     # OpenRouter models
     "moonshotai/kimi-k2",
-    "meta-llama/llama-4-maverick", 
+    "meta-llama/llama-4-maverick",
     "meta-llama/llama-4-scout",
-    # Grok models
+    # XAI models
     "grok-4",
 ]
 
 # Context variables for LLM configuration
-llm_provider_context: ContextVar[Optional[LLMProvider]] = ContextVar(
-    'llm_provider', default=None
-)
-llm_model_context: ContextVar[Optional[LLMModel]] = ContextVar(
-    'llm_model', default=None
-)
+llm_provider_context: ContextVar[Optional[LLMProvider]] = ContextVar("llm_provider", default=None)
+llm_model_context: ContextVar[Optional[LLMModel]] = ContextVar("llm_model", default=None)
 
 
 def set_llm_context(provider: LLMProvider, model: LLMModel) -> None:

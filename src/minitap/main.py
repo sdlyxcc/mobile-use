@@ -11,16 +11,15 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 from minitap.client.adb import adb, get_device
-from minitap.constants import RECURSION_LIMIT
-from minitap.graph.graph import get_graph
-from minitap.graph.state import State
-from minitap.services.llm import (
+from minitap.constants import (
     AVAILABLE_MODELS,
-    AVAILABLE_PROVIDERS,
     DEFAULT_MODEL,
     DEFAULT_PROVIDER,
+    RECURSION_LIMIT,
 )
-from minitap.utils.cli_helpers import validate_model_for_provider
+from minitap.graph.graph import get_graph
+from minitap.graph.state import State
+from minitap.utils.cli_helpers import display_device_status, validate_model_for_provider
 from minitap.utils.cli_selection import display_llm_config, select_provider_and_model
 from minitap.utils.media import (
     create_gif_from_trace_folder,
@@ -138,9 +137,9 @@ def main(
         Optional[str],
         typer.Option(
             "--provider",
-            help=f"LLM provider to use. Available: {', '.join(AVAILABLE_PROVIDERS)}. "
+            help=f"LLM provider to use. Available: {', '.join(AVAILABLE_MODELS.keys())}. "
             f"Default: {DEFAULT_PROVIDER} (from LLM_PROVIDER env var)",
-            click_type=Choice(AVAILABLE_PROVIDERS, case_sensitive=False),
+            click_type=Choice(AVAILABLE_MODELS.keys(), case_sensitive=False),
         ),
     ] = DEFAULT_PROVIDER,
     model: Annotated[
@@ -165,9 +164,11 @@ def main(
 
     console = Console()
 
+    display_device_status(console)
+
     final_provider, final_model = select_provider_and_model(
         console=console,
-        available_providers=[str(p) for p in AVAILABLE_PROVIDERS],
+        available_providers=[str(p) for p in AVAILABLE_MODELS.keys()],
         available_models=AVAILABLE_MODELS,
         default_provider=DEFAULT_PROVIDER,
         default_model=DEFAULT_MODEL,
