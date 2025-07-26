@@ -44,8 +44,12 @@ async def run_automation(
     goal: str,
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
+<<<<<<< HEAD
     provider: Optional[str] = None,
     model: Optional[str] = None,
+=======
+    graph_config_callbacks: Optional[list] = [],
+>>>>>>> main
 ):
     start_time = time.time()
     traces_output_path = Path(traces_output_path_str).resolve()
@@ -83,7 +87,8 @@ async def run_automation(
     try:
         print(f"Invoking graph with input: {graph_input}", flush=True)
         result = await (await get_graph()).ainvoke(
-            input=graph_input, config={"recursion_limit": RECURSION_LIMIT}
+            input=graph_input,
+            config={"recursion_limit": RECURSION_LIMIT, "callbacks": graph_config_callbacks},
         )
 
         print_ai_response_to_stderr(graph_result=result)

@@ -53,6 +53,7 @@ def get_openai_llm(
     return client
 
 
+<<<<<<< HEAD
 class ChatOpenRouter(ChatOpenAI):
     """ChatOpenAI wrapper preconfigured for the OpenRouter endpoint."""
 
@@ -117,3 +118,13 @@ def get_llm_legacy(provider: LLMProvider, model_name: LLMModel, temperature: flo
 def get_default_llm(temperature: float = 1):
     """Legacy function - prefer get_llm()."""
     return get_llm(temperature)
+=======
+def get_grok_llm() -> ChatOpenAI:
+    client = ChatOpenAI(
+        model="grok-4",
+        openai_api_key=settings.XAI_API_KEY,  # type: ignore[reportGeneralTypeIssues]
+        temperature=1,
+        base_url="https://api.x.ai/v1",
+    )
+    return client
+>>>>>>> main

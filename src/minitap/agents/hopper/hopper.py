@@ -32,8 +32,12 @@ async def hopper(
         HumanMessage(content=data),
     ]
 
+<<<<<<< HEAD
     # Get LLM from context (set by main.py)
     llm = get_llm()
+=======
+    llm = get_openai_llm(model_name="gpt-4.1")
+>>>>>>> main
     structured_llm = llm.with_structured_output(HopperOutput)
     response: HopperOutput = await structured_llm.ainvoke(messages)  # type: ignore
     return HopperOutput(
