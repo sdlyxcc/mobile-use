@@ -22,19 +22,25 @@
    uv pip install -e .
    ```
 
-3. **Run the project**
+3. **Set the environment variables**
+
+   Fill the `.env` file following the `.env.example` file.
+
+4. **Run the project**
+
+   > 💡 **Note:** If you did not set a model name and provider in your environment variables, a selection menu will appear to help you choose which one to use for running `mobile-use`.
 
    ```bash
-   minitap --help
+   python ./src/minitap/main.py "Go in settings, check my current battery level"
    ```
 
-4. **Exit the virtual environment**
+5. **Exit the virtual environment**
 
    ```bash
    deactivate
    ```
 
-## Recommended VS Code Setup
+## Recommended Development VS Code Setup
 
 1.  **Install the recommended extensions**
 
