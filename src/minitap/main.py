@@ -15,6 +15,7 @@ from minitap.constants import RECURSION_LIMIT
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.services.llm import (
+    AVAILABLE_MODELS,
     AVAILABLE_PROVIDERS,
     DEFAULT_MODEL,
     DEFAULT_PROVIDER,
@@ -76,14 +77,12 @@ async def run_automation(
         current_subgoal=None,
         subgoal_history=[],
         memory=None,
-        llm_provider=provider,
-        llm_model=model,
     ).model_dump()
 
     success = False
     try:
         print(f"Invoking graph with input: {graph_input}", flush=True)
-        result = await (await get_graph(provider=provider, model=model)).ainvoke(
+        result = await (await get_graph()).ainvoke(
             input=graph_input, config={"recursion_limit": RECURSION_LIMIT}
         )
 
@@ -159,24 +158,16 @@ def main(
 
     if provider and not model:
         typer.echo(f"\nAvailable models for {provider}:")
-        from minitap.services.llm import AVAILABLE_MODELS
-
-        for model_name in AVAILABLE_MODELS[provider]:
+        for model_name in AVAILABLE_MODELS:
             typer.echo(f"  - {model_name}")
         typer.echo("\nPlease specify a model with --model <model_name>")
         raise typer.Exit(code=0)
 
     console = Console()
-    from minitap.services.llm import (
-        AVAILABLE_MODELS,
-        AVAILABLE_PROVIDERS,
-        DEFAULT_MODEL,
-        DEFAULT_PROVIDER,
-    )
 
     final_provider, final_model = select_provider_and_model(
         console=console,
-        available_providers=AVAILABLE_PROVIDERS,
+        available_providers=[str(p) for p in AVAILABLE_PROVIDERS],
         available_models=AVAILABLE_MODELS,
         default_provider=DEFAULT_PROVIDER,
         default_model=DEFAULT_MODEL,

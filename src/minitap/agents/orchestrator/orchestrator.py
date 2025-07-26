@@ -5,7 +5,7 @@ from jinja2 import Template
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
 from minitap.graph.state import State
-from minitap.services.llm import get_default_llm, get_llm
+from minitap.services.llm import get_llm
 from minitap.tools.index import ALL_TOOLS
 from minitap.tools.maestro import get_maestro_tools
 from minitap.utils.adb import get_date, get_focused_app_info, get_screen_size
@@ -37,13 +37,8 @@ async def orchestrator(state: State):
     print(f"[TIMING] Prepared messages at {time.time() - start_time}", flush=True)
     maestro_tools = await get_maestro_tools(return_all=False)
     
-    # Use provider/model from state if available, otherwise use default
-    if state.llm_provider and state.llm_model:
-
-        base_llm = get_llm(state.llm_provider, state.llm_model)
-    else:
-
-        base_llm = get_default_llm()
+    # Get LLM from context (set by main.py)
+    base_llm = get_llm()
     
     llm = base_llm.bind_tools(
         tools=ALL_TOOLS + maestro_tools,
