@@ -21,7 +21,6 @@ SCREENSHOT_LIFETIME = 3
 RECURSION_LIMIT = 400
 MAX_MESSAGES_IN_HISTORY = 25
 
-
 AVAILABLE_MODELS: dict[LLMProvider, list[LLMModel]] = {
     "openai": ["o3"],
     "google": ["gemini-2.5-pro"],

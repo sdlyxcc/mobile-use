@@ -11,6 +11,7 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 from minitap.client.adb import adb, get_device
+from minitap.config import settings
 from minitap.constants import (
     AVAILABLE_MODELS,
     DEFAULT_MODEL,
@@ -45,22 +46,32 @@ async def run_automation(
     traces_output_path_str: str = "traces",
     graph_config_callbacks: Optional[list] = [],
 ):
+    print(f"Model provider selected: {settings.LLM_PROVIDER}")
+    print(f"Model selected: {settings.LLM_MODEL}")
     start_time = time.time()
-    traces_output_path = Path(traces_output_path_str).resolve()
-    print(f"📂 Traces output path: {traces_output_path}")
-    traces_temp_path = Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
-    print(f"📄📂 Traces temp path: {traces_temp_path}")
+
     if not adb.device_list():
-        print("❌ No Android device found. Please connect a device and enable USB debugging.")
+        print(
+            "❌ No Android device found. Please connect a device and enable USB debugging."
+        )
         raise typer.Exit(code=1)
-    traces_output_path.mkdir(parents=True, exist_ok=True)
-    traces_temp_path.mkdir(parents=True, exist_ok=True)
 
     device = get_device()
     assert device.serial is not None, "Device serial cannot be None after check."
+
     trace_id: str | None = None
+    traces_temp_path: Path | None = None
+    traces_output_path: Path | None = None
+
     if test_name:
-        print(f"Recording test with name: {test_name}", flush=True)
+        traces_output_path = Path(traces_output_path_str).resolve()
+        print(f"📂 Traces output path: {traces_output_path}")
+        traces_temp_path = (
+            Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
+        )
+        print(f"📄📂 Traces temp path: {traces_temp_path}")
+        traces_output_path.mkdir(parents=True, exist_ok=True)
+        traces_temp_path.mkdir(parents=True, exist_ok=True)
         trace_id = test_name
 
     print(f"Starting graph with goal: {goal}", flush=True)
@@ -82,7 +93,10 @@ async def run_automation(
         print(f"Invoking graph with input: {graph_input}", flush=True)
         result = await (await get_graph()).ainvoke(
             input=graph_input,
-            config={"recursion_limit": RECURSION_LIMIT, "callbacks": graph_config_callbacks},
+            config={
+                "recursion_limit": RECURSION_LIMIT,
+                "callbacks": graph_config_callbacks,
+            },
         )
 
         print_ai_response_to_stderr(graph_result=result)
@@ -93,7 +107,7 @@ async def run_automation(
         print(f"❌ Test failed with error: {e} ❌")
         raise
     finally:
-        if traces_temp_path and start_time:
+        if traces_temp_path and traces_output_path and start_time:
             formatted_ts = convert_timestamp_to_str(start_time)
             status = "_PASS" if success else "_FAIL"
             new_name = f"{test_name}{status}_{formatted_ts}"
@@ -116,7 +130,9 @@ async def run_automation(
 
 @app.command()
 def main(
-    goal: Annotated[str, typer.Argument(help="The main goal for the agent to achieve.")],
+    goal: Annotated[
+        str, typer.Argument(help="The main goal for the agent to achieve.")
+    ],
     test_name: Annotated[
         Optional[str],
         typer.Option(

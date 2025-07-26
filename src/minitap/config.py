@@ -6,7 +6,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 from minitap.constants import DEFAULT_MODEL, DEFAULT_PROVIDER
-from minitap.context import LLMModel, LLMProvider
+from minitap.context import LLMProvider
 
 load_dotenv(verbose=True)
 logger = logging.getLogger(__name__)
@@ -14,7 +14,7 @@ logger = logging.getLogger(__name__)
 
 class Settings(BaseSettings):
     LLM_PROVIDER: LLMProvider = DEFAULT_PROVIDER
-    LLM_MODEL: LLMModel = DEFAULT_MODEL
+    LLM_MODEL: str = DEFAULT_MODEL
 
     OPENAI_API_KEY: Optional[SecretStr] = None
     GOOGLE_API_KEY: Optional[SecretStr] = None

@@ -3,7 +3,6 @@ from typing import Optional
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
-
 from minitap.config import settings
 from minitap.constants import AVAILABLE_MODELS, DEFAULT_MODEL, DEFAULT_PROVIDER
 from minitap.context import (
@@ -16,13 +15,16 @@ logger = logging.getLogger(__name__)
 
 
 def validate_model_for_provider(provider: LLMProvider, model: LLMModel) -> bool:
-    if model not in AVAILABLE_MODELS[provider]:
+    if (
+        provider == AVAILABLE_MODELS["openrouter"]
+        and model not in AVAILABLE_MODELS[provider]
+    ):
         logger.warning(
             f"Model '{model}' is not valid for provider '{provider}'. "
             f"Available models: {AVAILABLE_MODELS[provider]}"
         )
         return False
-    return True
+    return model != ""
 
 
 def get_google_llm(
@@ -95,9 +97,13 @@ def get_llm(
     if context_provider and context_model:
         return _create_llm(context_provider, context_model, override_temperature)
 
-    logger.warning("LLM provider or model not found in context. Checking environment variables...")
+    logger.warning(
+        "LLM provider or model not found in context. Checking environment variables..."
+    )
     if settings.LLM_PROVIDER and settings.LLM_MODEL:
-        return _create_llm(settings.LLM_PROVIDER, settings.LLM_MODEL, override_temperature)
+        return _create_llm(
+            settings.LLM_PROVIDER, settings.LLM_MODEL, override_temperature
+        )
 
     logger.warning(
         "LLM provider or model not found in environment variables."
@@ -106,7 +112,7 @@ def get_llm(
     return _create_llm(DEFAULT_PROVIDER, DEFAULT_MODEL, override_temperature)
 
 
-def _create_llm(provider: LLMProvider, model_name: LLMModel, temperature: float = 1):
+def _create_llm(provider: LLMProvider, model_name: str, temperature: float = 1):
     """Internal function to create LLM instances."""
     if provider == "openai":
         return get_openai_llm(model_name, temperature)
