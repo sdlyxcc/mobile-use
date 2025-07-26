@@ -3,10 +3,11 @@ from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
+from typing_extensions import Annotated
+
 from minitap.agents.hopper.hopper import HopperOutput, hopper
 from minitap.client.adb import get_device
 from minitap.graph.state import State
-from typing_extensions import Annotated
 
 
 @tool

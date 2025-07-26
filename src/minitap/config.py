@@ -1,24 +1,27 @@
-import os
+import logging
+from typing import Optional
 
 from dotenv import load_dotenv
+from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
+from minitap.constants import DEFAULT_MODEL, DEFAULT_PROVIDER
+from minitap.context import LLMModel, LLMProvider
+
 load_dotenv(verbose=True)
+logger = logging.getLogger(__name__)
 
 
 class Settings(BaseSettings):
-    GOOGLE_API_KEY: str | None = os.environ.get("GOOGLE_API_KEY")
-    OPENAI_API_KEY: str | None = os.environ.get("OPENAI_API_KEY")
-    XAI_API_KEY: str | None = os.environ.get("XAI_API_KEY")
+    LLM_PROVIDER: LLMProvider = DEFAULT_PROVIDER
+    LLM_MODEL: LLMModel = DEFAULT_MODEL
 
-    LANGCHAIN_API_KEY: str | None = os.environ.get("LANGCHAIN_API_KEY")
-    LANGSMITH_TRACING: str | None = os.environ.get("LANGSMITH_TRACING")
-    LANGSMITH_ENDPOINT: str | None = os.environ.get("LANGSMITH_ENDPOINT")
-    LANGSMITH_PROJECT: str | None = os.environ.get("LANGSMITH_PROJECT")
+    OPENAI_API_KEY: Optional[SecretStr] = None
+    GOOGLE_API_KEY: Optional[SecretStr] = None
+    XAI_API_KEY: Optional[SecretStr] = None
+    OPEN_ROUTER_API_KEY: Optional[SecretStr] = None
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 
-try:
-    settings = Settings()
-except Exception as e:
-    raise ValueError("Missing required environment variables. Please check your .env file.") from e
+settings = Settings()

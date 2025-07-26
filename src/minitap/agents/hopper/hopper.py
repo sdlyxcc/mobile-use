@@ -3,8 +3,9 @@ from typing import Sequence
 
 from jinja2 import Template
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
-from minitap.services.llm import get_openai_llm
 from pydantic import BaseModel, Field
+
+from minitap.services.llm import get_llm
 
 
 class HopperOutput(BaseModel):
@@ -17,7 +18,11 @@ class HopperOutput(BaseModel):
     output: str = Field(description="The interesting data extracted from the input data.")
 
 
-async def hopper(initial_goal: str, messages: Sequence[BaseMessage], data: str) -> HopperOutput:
+async def hopper(
+    initial_goal: str,
+    messages: Sequence[BaseMessage],
+    data: str,
+) -> HopperOutput:
     print("Starting Hopper Agent", flush=True)
     system_message = Template(Path(__file__).parent.joinpath("hopper.md").read_text()).render(
         initial_goal=initial_goal,
@@ -28,7 +33,7 @@ async def hopper(initial_goal: str, messages: Sequence[BaseMessage], data: str) 
         HumanMessage(content=data),
     ]
 
-    llm = get_openai_llm(model_name="gpt-4.1")
+    llm = get_llm(override_provider="openai", override_model="gpt-4.1", override_temperature=0)
     structured_llm = llm.with_structured_output(HopperOutput)
     response: HopperOutput = await structured_llm.ainvoke(messages)  # type: ignore
     return HopperOutput(
