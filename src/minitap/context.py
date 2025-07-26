@@ -8,7 +8,7 @@ from contextvars import ContextVar
 from typing_extensions import Literal, Optional
 
 # Type definitions for providers and models
-LLMProvider = Literal["openai", "google", "openrouter"]
+LLMProvider = Literal["openai", "google", "openrouter", "grok"]
 LLMModel = Literal[
     # OpenAI models
     "o3",
@@ -18,6 +18,8 @@ LLMModel = Literal[
     "moonshotai/kimi-k2",
     "meta-llama/llama-4-maverick", 
     "meta-llama/llama-4-scout",
+    # Grok models
+    "grok-4",
 ]
 
 # Context variables for LLM configuration

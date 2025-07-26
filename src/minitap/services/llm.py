@@ -11,7 +11,7 @@ from minitap.context import (
     get_llm_context,
 )
 
-AVAILABLE_PROVIDERS: list[LLMProvider] = ["openai", "google", "openrouter"]
+AVAILABLE_PROVIDERS: list[LLMProvider] = ["openai", "google", "openrouter", "grok"]
 
 AVAILABLE_MODELS: dict[LLMProvider, list[LLMModel]] = {
     "openai": ["o3"],
@@ -21,6 +21,7 @@ AVAILABLE_MODELS: dict[LLMProvider, list[LLMModel]] = {
         "meta-llama/llama-4-maverick",
         "meta-llama/llama-4-scout",
     ],
+    "grok": ["grok-4"],
 }
 
 DEFAULT_PROVIDER: LLMProvider = "openai"
@@ -114,6 +115,13 @@ def _create_llm(provider: LLMProvider, model_name: LLMModel, temperature: float 
         )
     elif provider == "openrouter":
         return get_openrouter_llm(model_name, temperature)
+    elif provider == "grok":
+        return ChatOpenAI(
+            model=model_name,
+            api_key=SecretStr(settings.XAI_API_KEY) if settings.XAI_API_KEY else None,
+            temperature=temperature,
+            base_url="https://api.x.ai/v1",
+        )
     else:
         raise ValueError(f"Unsupported provider: {provider}")
 
