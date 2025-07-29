@@ -10,16 +10,22 @@ from minitap.services.llm import get_llm
 from minitap.tools.index import ALL_TOOLS
 from minitap.tools.maestro import get_maestro_tools
 from minitap.utils.adb import get_date, get_focused_app_info, get_screen_size
+from minitap.utils.decorators import wrap_with_callbacks
 from minitap.utils.recorder import record_interaction
 
 
-async def orchestrator(state: State):
+@wrap_with_callbacks(
+    before=lambda: print("📃 Starting Planner Agent...", end="", flush=True),
+    on_success=lambda _: print("✅", flush=True),
+    on_failure=lambda _: print("❌", flush=True),
+)
+async def planner_node(state: State):
     start_time = time.time()
-    print(f"[TIMING] Starting orchestrator at {start_time}", flush=True)
+    print(f"[TIMING] Starting Planner Agent at {start_time}", flush=True)
     focused_app_info = get_focused_app_info()
     screensize = get_screen_size()
     device_date = get_date()
-    system_message = Template(Path(__file__).parent.joinpath("orchestrator.md").read_text()).render(
+    system_message = Template(Path(__file__).parent.joinpath("planner.md").read_text()).render(
         initial_goal=state.initial_goal,
         device_id=state.device_id,
         focused_app_info=focused_app_info,
