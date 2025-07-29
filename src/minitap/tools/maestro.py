@@ -1,11 +1,14 @@
 import uuid
 
-from langchain_core.tools import BaseTool
+from langchain_core.messages import HumanMessage, ToolMessage
 from langchain_mcp_adapters.client import (
     MultiServerMCPClient,
     StdioConnection,
 )
+from mcp.types import ImageContent
+
 from minitap.constants import FORBIDDEN_MAESTRO_TOOLS, HIDDEN_MAESTRO_TOOLS
+from minitap.utils.media import compress_base64_jpeg
 
 _all_maestro_tools = None
 _model_maestro_tools = None
@@ -46,27 +49,32 @@ async def get_maestro_tools(return_all: bool = True):
     return maestro_tools
 
 
-async def get_view_hierarchy(device_id: str):
-    all_maestro_tools = await get_maestro_tools(return_all=True)
-    inspect_view_hierarchy_tool: BaseTool | None = None
-    for tool in all_maestro_tools:
-        if tool.name == "inspect_view_hierarchy":
-            inspect_view_hierarchy_tool = tool
-            break
-    else:
-        print(
-            "WARNING: inspect_view_hierarchy tool not found."
-            " Not returning an up-to-date view hierarchy.."
-        )
-        return None
-    if inspect_view_hierarchy_tool:
-        tool_message = await inspect_view_hierarchy_tool.ainvoke(
+async def invoke_maestro_tool(tool_name: str, device_id: str) -> ToolMessage | None:
+    maestro_tools = await get_maestro_tools(return_all=True)
+    for tool in maestro_tools:
+        if tool.name == tool_name:
+            return await tool.ainvoke(
+                {
+                    "type": "tool_call",
+                    "args": {
+                        "device_id": device_id,
+                    },
+                    "id": uuid.uuid4().hex,
+                }
+            )
+    return None
+
+
+def convert_maestro_screenshot_tool_message_to_human_message(
+    tool_message: ToolMessage,
+) -> HumanMessage:
+    image_artifact: ImageContent = tool_message.artifact[0]
+    compressed_image_base64 = compress_base64_jpeg(image_artifact.data)
+    return HumanMessage(
+        content=[
             {
-                "type": "tool_call",
-                "args": {
-                    "device_id": device_id,
-                },
-                "id": uuid.uuid4().hex,
+                "type": "image_url",
+                "image_url": {"url": f"data:image/jpeg;base64,{compressed_image_base64}"},
             }
-        )
-        return tool_message.content
+        ]
+    )
