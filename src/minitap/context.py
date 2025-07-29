@@ -25,9 +25,7 @@ LLMModel = Literal[
 ]
 
 # Context variables for LLM configuration
-llm_provider_context: ContextVar[Optional[LLMProvider]] = ContextVar(
-    "llm_provider", default=None
-)
+llm_provider_context: ContextVar[Optional[LLMProvider]] = ContextVar("llm_provider", default=None)
 llm_model_context: ContextVar[Optional[str]] = ContextVar("llm_model", default=None)
 
 
