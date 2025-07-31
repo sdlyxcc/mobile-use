@@ -1,9 +1,7 @@
-from typing import Sequence
-
 from langchain_core.messages import (
-    BaseMessage,
     ToolMessage,
 )
+
 from minitap.constants import (
     EXPIRED_TOOL_MESSAGE,
     SCREENSHOT_LIFETIME,
@@ -11,8 +9,8 @@ from minitap.constants import (
 from minitap.graph.state import State
 
 
-def history_cleanup(state: State, transformed_messages: Sequence[BaseMessage]):
-    messages = state.messages
+def history_cleanup(state: State):
+    messages = list(state.messages)
 
     expired_screenshot_tool_messages: list[ToolMessage] = []
     for message in messages[:-SCREENSHOT_LIFETIME]:
@@ -22,5 +20,5 @@ def history_cleanup(state: State, transformed_messages: Sequence[BaseMessage]):
                 expired_screenshot_tool_messages.append(message)
 
     return {
-        "messages": list(transformed_messages) + expired_screenshot_tool_messages,
+        "messages": messages + expired_screenshot_tool_messages,
     }

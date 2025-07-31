@@ -1,8 +1,9 @@
 import logging
-from typing import Optional
+from typing import Awaitable, Callable, Optional, TypeVar
 
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
+
 from minitap.config import settings
 from minitap.constants import AVAILABLE_MODELS, DEFAULT_MODEL, DEFAULT_PROVIDER
 from minitap.context import (
@@ -15,10 +16,7 @@ logger = logging.getLogger(__name__)
 
 
 def validate_model_for_provider(provider: LLMProvider, model: LLMModel) -> bool:
-    if (
-        provider == AVAILABLE_MODELS["openrouter"]
-        and model not in AVAILABLE_MODELS[provider]
-    ):
+    if provider == AVAILABLE_MODELS["openrouter"] and model not in AVAILABLE_MODELS[provider]:
         logger.warning(
             f"Model '{model}' is not valid for provider '{provider}'. "
             f"Available models: {AVAILABLE_MODELS[provider]}"
@@ -97,13 +95,9 @@ def get_llm(
     if context_provider and context_model:
         return _create_llm(context_provider, context_model, override_temperature)
 
-    logger.warning(
-        "LLM provider or model not found in context. Checking environment variables..."
-    )
+    logger.warning("LLM provider or model not found in context. Checking environment variables...")
     if settings.LLM_PROVIDER and settings.LLM_MODEL:
-        return _create_llm(
-            settings.LLM_PROVIDER, settings.LLM_MODEL, override_temperature
-        )
+        return _create_llm(settings.LLM_PROVIDER, settings.LLM_MODEL, override_temperature)
 
     logger.warning(
         "LLM provider or model not found in environment variables."
@@ -124,3 +118,16 @@ def _create_llm(provider: LLMProvider, model_name: str, temperature: float = 1):
         return get_grok_llm(model_name, temperature)
     else:
         raise ValueError(f"Unsupported provider: {provider}")
+
+
+T = TypeVar("T")
+
+
+async def with_fallback(
+    main_call: Callable[[], Awaitable[T]], fallback_call: Callable[[], Awaitable[T]]
+) -> T:
+    try:
+        return await main_call()
+    except Exception as e:
+        print(f"❗ Main LLM inference failed: {e}. Falling back...")
+        return await fallback_call()

@@ -26,16 +26,16 @@ LLMModel = Literal[
 
 # Context variables for LLM configuration
 llm_provider_context: ContextVar[Optional[LLMProvider]] = ContextVar("llm_provider", default=None)
-llm_model_context: ContextVar[Optional[LLMModel]] = ContextVar("llm_model", default=None)
+llm_model_context: ContextVar[Optional[str]] = ContextVar("llm_model", default=None)
 
 
-def set_llm_context(provider: LLMProvider, model: LLMModel) -> None:
+def set_llm_context(provider: LLMProvider, model: str) -> None:
     """Set the LLM provider and model in context."""
     llm_provider_context.set(provider)
     llm_model_context.set(model)
 
 
-def get_llm_context() -> tuple[Optional[LLMProvider], Optional[LLMModel]]:
+def get_llm_context() -> tuple[Optional[LLMProvider], Optional[str]]:
     """Get the current LLM provider and model from context."""
     return llm_provider_context.get(), llm_model_context.get()
 

@@ -51,9 +51,7 @@ async def run_automation(
     start_time = time.time()
 
     if not adb.device_list():
-        print(
-            "❌ No Android device found. Please connect a device and enable USB debugging."
-        )
+        print("❌ No Android device found. Please connect a device and enable USB debugging.")
         raise typer.Exit(code=1)
 
     device = get_device()
@@ -66,9 +64,7 @@ async def run_automation(
     if test_name:
         traces_output_path = Path(traces_output_path_str).resolve()
         print(f"📂 Traces output path: {traces_output_path}")
-        traces_temp_path = (
-            Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
-        )
+        traces_temp_path = Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
         print(f"📄📂 Traces temp path: {traces_temp_path}")
         traces_output_path.mkdir(parents=True, exist_ok=True)
         traces_temp_path.mkdir(parents=True, exist_ok=True)
@@ -130,9 +126,7 @@ async def run_automation(
 
 @app.command()
 def main(
-    goal: Annotated[
-        str, typer.Argument(help="The main goal for the agent to achieve.")
-    ],
+    goal: Annotated[str, typer.Argument(help="The main goal for the agent to achieve.")],
     test_name: Annotated[
         Optional[str],
         typer.Option(

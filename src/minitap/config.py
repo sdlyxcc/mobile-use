@@ -6,7 +6,7 @@ from pydantic import SecretStr
 from pydantic_settings import BaseSettings
 
 from minitap.constants import DEFAULT_MODEL, DEFAULT_PROVIDER
-from minitap.context import LLMProvider
+from minitap.context import LLMProvider, set_llm_context
 
 load_dotenv(verbose=True)
 logger = logging.getLogger(__name__)
@@ -25,3 +25,4 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+set_llm_context(settings.LLM_PROVIDER, settings.LLM_MODEL)
