@@ -1,4 +1,5 @@
 import asyncio
+import platform
 import sys
 import time
 from pathlib import Path
@@ -10,7 +11,6 @@ from langchain_core.messages import AIMessage
 from rich.console import Console
 from typing_extensions import Annotated
 
-from minitap.clients.adb_client import adb, get_device
 from minitap.config import settings
 from minitap.constants import (
     AVAILABLE_MODELS,
@@ -18,6 +18,9 @@ from minitap.constants import (
     DEFAULT_PROVIDER,
     RECURSION_LIMIT,
 )
+from minitap.context import DeviceContext
+from minitap.controllers.mobile_command_controller import ScreenDataResponse, get_screen_data
+from minitap.controllers.platform_specific_commands import get_first_device_id
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.servers.utils import are_ports_available
@@ -56,26 +59,32 @@ async def run_automation(
     traces_output_path_str: str = "traces",
     graph_config_callbacks: Optional[list] = [],
 ):
+    device_id: str | None = None
+
     if are_ports_available():
         logger.error("❌ Mobile-use servers are not started. Starting...")
         device_id = await run_servers()
-    else:
-        device_id = get_device().serial
 
-    logger.info(f"Running automation on device ID: {device_id}")
+    if not device_id:
+        device_id = get_first_device_id()
+
+    host_platform = platform.system()
+
     logger.info(f"Model provider selected: {settings.LLM_PROVIDER}")
     logger.info(f"Model selected: {settings.LLM_MODEL}")
+
+    screen_data: ScreenDataResponse = get_screen_data()
+    device_context_instance = DeviceContext(
+        host_platform="WINDOWS" if host_platform == "Windows" else "LINUX",
+        mobile_platform="ANDROID" if screen_data.platform == "ANDROID" else "IOS",
+        device_id=device_id,
+        device_width=screen_data.width,
+        device_height=screen_data.height,
+    )
+    device_context_instance.set()
+    logger.info(device_context_instance.to_str())
+
     start_time = time.time()
-
-    if not adb.device_list():
-        logger.error(
-            "❌ No Android device found. Please connect a device and enable USB debugging."
-        )
-        raise typer.Exit(code=1)
-
-    device = get_device()
-    assert device.serial is not None, "Device serial cannot be None after check."
-
     trace_id: str | None = None
     traces_temp_path: Path | None = None
     traces_output_path: Path | None = None
@@ -95,7 +104,7 @@ async def run_automation(
         remaining_steps=RECURSION_LIMIT,
         messages=[],
         is_goal_achieved=False,
-        device_id=device.serial,
+        device_id=device_id,
         latest_ui_hierarchy=None,
         trace_id=trace_id,
         current_subgoal=None,
