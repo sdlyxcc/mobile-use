@@ -6,6 +6,7 @@ Uses ContextVar to avoid prop drilling and maintain clean function signatures.
 
 from contextvars import ContextVar
 
+from pydantic import BaseModel
 from typing_extensions import Literal, Optional
 
 # Type definitions for providers and models
@@ -46,23 +47,17 @@ def clear_llm_context() -> None:
     llm_model_context.set(None)
 
 
-class DeviceContext:
-    def __init__(
-        self,
-        host_platform: Literal["WINDOWS", "MACOS", "LINUX"],
-        mobile_platform: Literal["ANDROID", "IOS"],
-        device_id: str,
-        device_width: int,
-        device_height: int,
-    ):
-        self.host_platform = host_platform
-        self.mobile_platform = mobile_platform
-        self.device_id = device_id
-        self.device_width = device_width
-        self.device_height = device_height
+class DeviceContext(BaseModel):
+    host_platform: Literal["WINDOWS", "LINUX"]
+    mobile_platform: Literal["ANDROID", "IOS"]
+    device_id: str
+    device_width: int
+    device_height: int
+
+    def set(self):
         device_context.set(self)
 
-    def __str__(self):
+    def to_str(self):
         return (
             f"Host platform: {self.host_platform}\n"
             f"Mobile platform: {self.mobile_platform}\n"
