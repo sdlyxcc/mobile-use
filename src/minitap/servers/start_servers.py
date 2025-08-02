@@ -1,11 +1,50 @@
-import subprocess
+import signal
 import sys
 import time
-from pathlib import Path
+from typing import Optional
 
 import requests
+from colorama import Fore, Style, init
 
 from minitap.servers.device_hardware_bridge import DeviceHardwareBridge
+from minitap.servers.device_screen_api import start as start_device_screen_api
+
+# Initialize colorama for Windows compatibility
+init(autoreset=True)
+
+# Global variables for graceful shutdown
+running_processes = []
+bridge_instance = None
+shutdown_requested = False
+
+
+# Colored logging functions
+def log_info(message: str) -> None:
+    """Print info message in blue."""
+    print(f"{Fore.BLUE}ℹ {message}{Style.RESET_ALL}")
+
+
+def log_success(message: str) -> None:
+    """Print success message in green."""
+    print(f"{Fore.GREEN}✓ {message}{Style.RESET_ALL}")
+
+
+def log_error(message: str) -> None:
+    """Print error message in red."""
+    print(f"{Fore.RED}❌ {message}{Style.RESET_ALL}")
+
+
+def log_warning(message: str) -> None:
+    """Print warning message in yellow."""
+    print(f"{Fore.YELLOW}⚠ {message}{Style.RESET_ALL}")
+
+
+def log_header(message: str) -> None:
+    """Print header message in cyan with separator."""
+    separator = "=" * 60
+    print(f"{Fore.CYAN}{separator}")
+    print(f"{message}")
+    print(f"{separator}{Style.RESET_ALL}")
 
 
 def check_device_screen_api_health(port=9998, max_retries=30, delay=1):
@@ -15,182 +54,156 @@ def check_device_screen_api_health(port=9998, max_retries=30, delay=1):
         try:
             response = requests.get(health_url, timeout=3)
             if response.status_code == 200:
-                print(f"✓ Device Screen API is healthy on port {port}")
+                log_success(f"Device Screen API is healthy on port {port}")
                 return True
         except requests.exceptions.RequestException:
             pass
 
         if attempt == 0:
-            print(f"Waiting for Device Screen API to become healthy on port {port}...")
+            log_info(f"Waiting for Device Screen API to become healthy on port {port}...")
 
         time.sleep(delay)
 
+    log_error(f"Device Screen API failed to become healthy after {max_retries} attempts")
     return False
 
 
-def start_device_screen_api():
-    print("Starting Device Screen API...")
-
-    try:
-        current_dir = Path(__file__).parent
-        api_script = current_dir / "device_screen_api.py"
-
-        if not api_script.exists():
-            print(f"❌ Error: {api_script} not found")
-            return None
-
-        process = subprocess.Popen(
-            [sys.executable, str(api_script)],
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-            cwd=str(current_dir),
-        )
-
-        time.sleep(2)
-
-        if process.poll() is not None:
-            stdout, stderr = process.communicate()
-            print("❌ Device Screen API failed to start:")
-            print(f"STDOUT: {stdout}")
-            print(f"STDERR: {stderr}")
-            return None
-
-        return process
-
-    except Exception as e:
-        print(f"❌ Error starting Device Screen API: {e}")
-        return None
-
-
-def start_device_hardware_bridge():
-    print("Starting Device Hardware Bridge...")
+def start_device_hardware_bridge() -> Optional[DeviceHardwareBridge]:
+    log_info("Starting Device Hardware Bridge...")
 
     try:
         bridge = DeviceHardwareBridge()
+        success = bridge.start()
 
-        if not bridge.start():
-            print("❌ Failed to start Device Hardware Bridge")
+        if success:
+            log_success("Device Hardware Bridge started successfully")
+            return bridge
+        else:
+            log_error("Failed to start Device Hardware Bridge")
             return None
 
-        max_wait_time = 30
-        start_time = time.time()
-
-        while time.time() - start_time < max_wait_time:
-            status = bridge.get_status()
-            current_status = status["status"]
-
-            if current_status == "running":
-                print("✓ Device Hardware Bridge started successfully")
-                # Try to extract device ID from output
-                output = status.get("output", [])
-                device_id = None
-
-                for line in output:
-                    if "Running on" in line:
-                        device_id = line.split("Running on")[-1].strip()
-                        break
-
-                if device_id:
-                    print(f"✓ Connected device ID: {device_id}")
-                else:
-                    print("✓ Device Hardware Bridge is running")
-
-                return bridge
-
-            elif current_status == "no_device":
-                print("❌ No running devices found")
-                print("   Please connect a device or start an emulator, then try again")
-                bridge.stop()
-                return None
-
-            elif current_status == "port_in_use":
-                print("❌ Port 9999 is already in use")
-                print("   Please close the program using this port and try again")
-                bridge.stop()
-                return None
-
-            elif current_status == "failed":
-                print("❌ Device Hardware Bridge failed to start")
-                output = status.get("output", [])
-                if output:
-                    print("   Last output:")
-                    for line in output[-5:]:  # Show last 5 lines
-                        print(f"   {line}")
-                bridge.stop()
-                return None
-
-            time.sleep(1)
-
-        print("❌ Device Hardware Bridge startup timed out")
-        bridge.stop()
-        return None
-
     except Exception as e:
-        print(f"❌ Error starting Device Hardware Bridge: {e}")
+        log_error(f"Error starting Device Hardware Bridge: {e}")
         return None
+
+
+def signal_handler(signum, frame):
+    """Handle shutdown signals gracefully using the same stop functions as stop_servers.py."""
+    global shutdown_requested
+    
+    log_warning("\nShutdown signal received. Gracefully stopping servers...")
+    shutdown_requested = True
+    
+    # Use the same unified stop function as stop_servers.py for consistency
+    try:
+        from minitap.servers.stop_servers import stop_all_servers
+        
+        # Stop both services using the same reliable functions
+        api_stopped, bridge_stopped = stop_all_servers(quiet=True)
+        
+        if api_stopped and bridge_stopped:
+            log_success("All servers stopped gracefully")
+        elif api_stopped:
+            log_warning("Device Screen API stopped, but Device Hardware Bridge had issues")
+        elif bridge_stopped:
+            log_warning("Device Hardware Bridge stopped, but Device Screen API had issues")
+        else:
+            log_error("Failed to stop both servers gracefully")
+            
+    except ImportError as e:
+        log_error(f"Could not import stop_servers module: {e}")
+        # Fallback to basic stopping
+        if bridge_instance:
+            try:
+                bridge_instance.stop()
+                log_success("Device Hardware Bridge stopped (fallback)")
+            except Exception as e:
+                log_error(f"Error stopping bridge: {e}")
+    except Exception as e:
+        log_error(f"Error during graceful shutdown: {e}")
+    
+    sys.exit(0)
+
+
+def cleanup_existing_servers():
+    """Stop any existing servers to ensure clean startup."""
+    log_info("Checking for existing servers...")
+    
+    # Use the same unified stop function for consistency
+    try:
+        from minitap.servers.stop_servers import stop_all_servers
+        
+        # Try to stop existing servers (quietly to avoid duplicate headers)
+        api_stopped, bridge_stopped = stop_all_servers(quiet=True)
+        
+        if api_stopped or bridge_stopped:
+            log_success("Cleaned up existing servers")
+        else:
+            log_info("No existing servers found")
+            
+    except ImportError as e:
+        log_warning(f"Could not import stop_servers module: {e}")
+    except Exception as e:
+        log_warning(f"Error during cleanup: {e}")
 
 
 def main():
-    print("=" * 60)
-    print("Starting Mobile-Use Servers")
-    print("=" * 60)
+    global bridge_instance, running_processes
+    
+    # Set up signal handlers for graceful shutdown
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+    
+    log_header("Starting Mobile-Use Servers")
+    
+    # Clean up any existing servers first
+    cleanup_existing_servers()
+
+    # Start Device Hardware Bridge
+    bridge_instance = start_device_hardware_bridge()
+    if not bridge_instance:
+        log_warning("Failed to start Device Hardware Bridge. API will continue running.")
+        log_info("You can try starting the bridge manually later.")
+
+    # Start Device Screen API
+    log_info("Starting Device Screen API...")
     api_process = start_device_screen_api()
     if not api_process:
-        print("❌ Failed to start Device Screen API. Exiting.")
+        log_error("Failed to start Device Screen API. Exiting.")
         sys.exit(1)
+    
+    running_processes.append(api_process)
 
     if not check_device_screen_api_health():
-        print("❌ Device Screen API health check failed. Stopping...")
+        log_error("Device Screen API health check failed. Stopping...")
         api_process.terminate()
         sys.exit(1)
 
-    print("✓ Device Screen API listening on port 9998")
+    log_success("Device Screen API listening on port 9998")
 
-    bridge = start_device_hardware_bridge()
-    if not bridge:
-        print("❌ Failed to start Device Hardware Bridge. API will continue running.")
-        print("   You can try starting the bridge manually later.")
-
-    print("=" * 60)
-    print("Server startup complete!")
-    print("=" * 60)
-
-    if bridge:
-        print("Both servers are running successfully.")
-        print("- Device Screen API: http://localhost:9998")
-        print("- Maestro Studio: http://localhost:9999")
+    # Display server status
+    log_header("Server Status")
+    if bridge_instance:
+        log_success("Both servers are running successfully:")
+        log_info("- Device Screen API: http://localhost:9998")
+        log_info("- Maestro Studio: http://localhost:9999")
     else:
-        print("Device Screen API is running, but Hardware Bridge failed to start.")
-        print("- Device Screen API: http://localhost:9998")
+        log_warning("Device Screen API is running, but Hardware Bridge failed to start:")
+        log_info("- Device Screen API: http://localhost:9998")
 
-    print("\nPress Ctrl+C to stop all servers...")
+    log_info("\nPress Ctrl+C to stop all servers...")
 
     try:
-        while True:
+        while not shutdown_requested:
             time.sleep(1)
 
             if api_process.poll() is not None:
-                print("❌ Device Screen API process has stopped unexpectedly")
+                log_error("Device Screen API process has stopped unexpectedly")
                 break
 
     except KeyboardInterrupt:
-        print("\n\nShutting down servers...")
-
-        if bridge:
-            print("Stopping Device Hardware Bridge...")
-            bridge.stop()
-
-        print("Stopping Device Screen API...")
-        api_process.terminate()
-
-        try:
-            api_process.wait(timeout=5)
-        except subprocess.TimeoutExpired:
-            print("Force killing Device Screen API...")
-            api_process.kill()
-
-        print("All servers stopped.")
+        # This will be handled by the signal handler
+        pass
 
 
 if __name__ == "__main__":

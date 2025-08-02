@@ -120,6 +120,10 @@ async def health_check():
         raise HTTPException(status_code=503, detail=f"Maestro Studio not available: {e}")
 
 
-if __name__ == "__main__":
+def start():
     print("--- Starting Maestro Screen Server ---")
     uvicorn.run(app, host="0.0.0.0", port=9998)
+
+
+if __name__ == "__main__":
+    start()
