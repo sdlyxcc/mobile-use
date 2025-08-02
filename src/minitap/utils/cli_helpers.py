@@ -4,9 +4,8 @@ import sys
 import typer
 from rich.console import Console
 
-from minitap.clients.adb_client import adb
 from minitap.constants import AVAILABLE_MODELS
-
+from minitap.clients.adb_client import adb
 
 def validate_model_for_provider(provider: str, model: str) -> None:
     """Validate that the model is available for the given provider."""
