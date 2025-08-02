@@ -1,5 +1,4 @@
 import multiprocessing
-
 import signal
 import sys
 import time
@@ -9,7 +8,7 @@ import requests
 import uvicorn
 
 from minitap.servers.device_hardware_bridge import BridgeStatus, DeviceHardwareBridge
-from minitap.servers.device_screen_api import app, DEVICE_SCREEN_API_PORT
+from minitap.servers.device_screen_api import DEVICE_SCREEN_API_PORT, app
 from minitap.utils.logger import get_server_logger
 
 logger = get_server_logger()
