@@ -1,9 +1,10 @@
+import subprocess
 import sys
 
 import typer
 from rich.console import Console
 
-from minitap.client.adb import adb
+from minitap.clients.adb_client import adb
 from minitap.constants import AVAILABLE_MODELS
 
 
@@ -47,3 +48,7 @@ def show_available_models():
         typer.echo(f"\n{provider}:")
         for model in models:
             typer.echo(f"  - {model}")
+
+
+def run_shell_command_on_host(command: str) -> str:
+    return subprocess.check_output(command, shell=True, text=True)
