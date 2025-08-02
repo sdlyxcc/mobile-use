@@ -44,3 +44,36 @@ def clear_llm_context() -> None:
     """Clear the LLM context."""
     llm_provider_context.set(None)
     llm_model_context.set(None)
+
+
+class DeviceContext:
+    def __init__(
+        self,
+        host_platform: Literal["WINDOWS", "MACOS", "LINUX"],
+        mobile_platform: Literal["ANDROID", "IOS"],
+        device_id: str,
+        device_width: int,
+        device_height: int,
+    ):
+        self.host_platform = host_platform
+        self.mobile_platform = mobile_platform
+        self.device_id = device_id
+        self.device_width = device_width
+        self.device_height = device_height
+        device_context.set(self)
+
+    def __str__(self):
+        return (
+            f"Host platform: {self.host_platform}\n"
+            f"Mobile platform: {self.mobile_platform}\n"
+            f"Device ID: {self.device_id}\n"
+            f"Device width: {self.device_width}\n"
+            f"Device height: {self.device_height}\n"
+        )
+
+
+device_context: ContextVar[Optional[DeviceContext]] = ContextVar("device_context", default=None)
+
+
+def get_device_context() -> Optional[DeviceContext]:
+    return device_context.get()
