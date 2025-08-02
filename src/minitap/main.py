@@ -20,8 +20,10 @@ from minitap.constants import (
 )
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
+from minitap.servers.utils import are_ports_available
 from minitap.utils.cli_helpers import display_device_status, validate_model_for_provider
 from minitap.utils.cli_selection import display_llm_config, select_provider_and_model
+from minitap.utils.logger import get_logger
 from minitap.utils.media import (
     create_gif_from_trace_folder,
     create_steps_json_from_trace_folder,
@@ -31,6 +33,7 @@ from minitap.utils.media import (
 from minitap.utils.time import convert_timestamp_to_str
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+logger = get_logger(__name__)
 
 
 def print_ai_response_to_stderr(graph_result: dict[str, Any]):
@@ -40,18 +43,34 @@ def print_ai_response_to_stderr(graph_result: dict[str, Any]):
             return
 
 
+async def run_servers():
+    from minitap.servers.start_servers import start_servers_and_get_device_id
+
+    device_id = start_servers_and_get_device_id()
+    return device_id
+
+
 async def run_automation(
     goal: str,
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
     graph_config_callbacks: Optional[list] = [],
 ):
-    print(f"Model provider selected: {settings.LLM_PROVIDER}")
-    print(f"Model selected: {settings.LLM_MODEL}")
+    if are_ports_available():
+        logger.error("❌ Mobile-use servers are not started. Starting...")
+        device_id = await run_servers()
+    else:
+        device_id = get_device().serial
+
+    logger.info(f"Running automation on device ID: {device_id}")
+    logger.info(f"Model provider selected: {settings.LLM_PROVIDER}")
+    logger.info(f"Model selected: {settings.LLM_MODEL}")
     start_time = time.time()
 
     if not adb.device_list():
-        print("❌ No Android device found. Please connect a device and enable USB debugging.")
+        logger.error(
+            "❌ No Android device found. Please connect a device and enable USB debugging."
+        )
         raise typer.Exit(code=1)
 
     device = get_device()

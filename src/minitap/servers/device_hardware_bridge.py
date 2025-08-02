@@ -1,10 +1,15 @@
 import platform
+import re
 import subprocess
 import threading
 import time
 from enum import Enum
+from typing import Optional
 
 import requests
+
+MAESTRO_STUDIO_PORT = 9999
+DEVICE_HARDWARE_BRIDGE_PORT = MAESTRO_STUDIO_PORT
 
 
 class BridgeStatus(Enum):
@@ -23,6 +28,7 @@ class DeviceHardwareBridge:
         self.thread = None
         self.output = []
         self.lock = threading.Lock()
+        self.device_id: Optional[str] = None
 
     def _run_maestro_studio(self):
         try:
@@ -91,6 +97,11 @@ class DeviceHardwareBridge:
                 if self.process:
                     self.process.kill()
                 break
+
+            connected_match = re.search(r"Connected to device (\S+)", line)
+            if connected_match:
+                with self.lock:
+                    self.device_id = connected_match.group(1)
 
             if "Maestro Studio is running at" in line:
                 if self._wait_for_health_check():
@@ -166,3 +177,7 @@ class DeviceHardwareBridge:
     def get_status(self):
         with self.lock:
             return {"status": self.status.value, "output": self.output[-10:]}
+
+    def get_device_id(self) -> Optional[str]:
+        with self.lock:
+            return self.device_id

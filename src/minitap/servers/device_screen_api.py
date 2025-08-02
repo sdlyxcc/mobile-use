@@ -10,7 +10,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from sseclient import SSEClient
 
-MAESTRO_STUDIO_SERVER_ROOT = "http://localhost:9999"
+from minitap.servers.device_hardware_bridge import MAESTRO_STUDIO_PORT
+
+DEVICE_SCREEN_API_PORT = 9998
+
+MAESTRO_STUDIO_SERVER_ROOT = f"http://localhost:{MAESTRO_STUDIO_PORT}"
 MAESTRO_STUDIO_API_URL = f"{MAESTRO_STUDIO_SERVER_ROOT}/api"
 
 _latest_screen_data = None
@@ -122,7 +126,7 @@ async def health_check():
 
 def start():
     print("--- Starting Maestro Screen Server ---")
-    uvicorn.run(app, host="0.0.0.0", port=9998)
+    uvicorn.run(app, host="0.0.0.0", port=DEVICE_SCREEN_API_PORT)
 
 
 if __name__ == "__main__":
