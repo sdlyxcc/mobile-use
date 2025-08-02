@@ -197,12 +197,9 @@ def stop_all_servers(quiet: bool = False) -> tuple[bool, bool]:
 
 def main():
     """Main function to stop all servers."""
-    logger.header("Stopping Mobile-Use Servers")
-
     api_success = stop_device_screen_api()
     bridge_success = stop_device_hardware_bridge()
 
-    logger.header("Stop Summary")
     if api_success and bridge_success:
         logger.success("All servers stopped successfully")
         return 0
