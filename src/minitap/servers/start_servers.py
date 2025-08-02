@@ -1,12 +1,15 @@
+import multiprocessing
+
 import signal
 import sys
 import time
 from typing import Optional
 
 import requests
+import uvicorn
 
-from minitap.servers.device_hardware_bridge import DeviceHardwareBridge
-from minitap.servers.device_screen_api import start as start_device_screen_api
+from minitap.servers.device_hardware_bridge import BridgeStatus, DeviceHardwareBridge
+from minitap.servers.device_screen_api import app, DEVICE_SCREEN_API_PORT
 from minitap.utils.logger import get_server_logger
 
 logger = get_server_logger()
@@ -112,15 +115,25 @@ def cleanup_existing_servers():
         logger.warning(f"Error during cleanup: {e}")
 
 
-def main():
+def start_device_screen_api_process():
+    """Target function to run uvicorn in a separate process."""
+    uvicorn.run(app, host="0.0.0.0", port=DEVICE_SCREEN_API_PORT)
+
+
+def start_device_screen_api() -> Optional[multiprocessing.Process]:
+    """Starts the Device Screen API in a new process."""
+    try:
+        process = multiprocessing.Process(target=start_device_screen_api_process, daemon=True)
+        process.start()
+        return process
+    except Exception as e:
+        logger.error(f"Failed to start Device Screen API process: {e}")
+        return None
+
+
+def start_servers_and_get_device_id() -> Optional[str]:
+    """Starts all servers, waits for them to be ready, and returns the device ID."""
     global bridge_instance, running_processes
-
-    signal.signal(signal.SIGINT, signal_handler)
-    signal.signal(signal.SIGTERM, signal_handler)
-
-    logger.info("\n" + "=" * 50)
-    logger.info("Starting mobile-use servers")
-    logger.info("=" * 50)
 
     cleanup_existing_servers()
 
@@ -129,31 +142,63 @@ def main():
     if not bridge_instance:
         logger.warning("Failed to start Device Hardware Bridge. Exiting.")
         logger.info("Note: Device Screen API requires Device Hardware Bridge to function properly.")
-        return
+        return None
 
     logger.info("Starting Device Screen API...")
     api_process = start_device_screen_api()
     if not api_process:
         logger.error("Failed to start Device Screen API. Exiting.")
-        sys.exit(1)
+        return None
 
     running_processes.append(api_process)
 
     if not check_device_screen_api_health():
         logger.error("Device Screen API health check failed. Stopping...")
         api_process.terminate()
-        sys.exit(1)
+        return None
 
     logger.success("Device Screen API listening on port 9998")
 
-    logger.header("Server Status")
-    if bridge_instance:
+    logger.info("Waiting for Device Hardware Bridge to connect to a device...")
+    while True:
+        status_info = bridge_instance.get_status()
+        status = status_info.get("status")
+
+        if status == BridgeStatus.RUNNING.value:
+            device_id = bridge_instance.get_device_id()
+            logger.success(f"Device Hardware Bridge is running. Connected to device: {device_id}")
+            return device_id
+
+        failed_statuses = [
+            BridgeStatus.NO_DEVICE.value,
+            BridgeStatus.FAILED.value,
+            BridgeStatus.PORT_IN_USE.value,
+        ]
+        if status in failed_statuses:
+            logger.error(f"Device Hardware Bridge failed to connect. Status: {status}")
+            return None
+
+        time.sleep(1)
+
+
+def main():
+    signal.signal(signal.SIGINT, signal_handler)
+    signal.signal(signal.SIGTERM, signal_handler)
+
+    logger.info("\n" + "=" * 50)
+    logger.info("Starting mobile-use servers")
+    logger.info("=" * 50)
+
+    device_id = start_servers_and_get_device_id()
+
+    if device_id:
+        logger.header("Server Status")
         logger.success("Both servers are running successfully:")
+        logger.info(f"- Connected Device ID: {device_id}")
         logger.info("- Device Screen API: http://localhost:9998")
         logger.info("- Maestro Studio: http://localhost:9999")
     else:
-        logger.warning("Device Screen API is running, but Hardware Bridge failed to start:")
-        logger.info("- Device Screen API: http://localhost:9998")
+        logger.warning("Servers did not start correctly or no device was found.")
 
     logger.info("\nPress Ctrl+C to stop all servers...")
 
