@@ -10,7 +10,7 @@ from langchain_core.messages import AIMessage
 from rich.console import Console
 from typing_extensions import Annotated
 
-from minitap.client.adb import adb, get_device
+from minitap.clients.adb_client import adb, get_device
 from minitap.config import settings
 from minitap.constants import (
     AVAILABLE_MODELS,

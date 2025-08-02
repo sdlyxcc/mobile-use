@@ -5,11 +5,15 @@ from jinja2 import Template
 from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
 from langchain_core.tools import BaseTool
 
+from minitap.controllers.platform_specific_commands import (
+    get_date,
+    get_focused_app_info,
+    get_screen_size,
+)
 from minitap.graph.state import State
 from minitap.services.llm import get_llm
 from minitap.tools.index import ALL_TOOLS
 from minitap.tools.maestro import get_maestro_tools
-from minitap.utils.adb import get_date, get_focused_app_info, get_screen_size
 from minitap.utils.decorators import wrap_with_callbacks
 from minitap.utils.recorder import record_interaction
 
@@ -22,18 +26,16 @@ from minitap.utils.recorder import record_interaction
 async def planner_node(state: State):
     start_time = time.time()
     print(f"[TIMING] Starting Planner Agent at {start_time}", flush=True)
-    focused_app_info = get_focused_app_info()
-    screensize = get_screen_size()
-    device_date = get_date()
+
     system_message = Template(Path(__file__).parent.joinpath("planner.md").read_text()).render(
         initial_goal=state.initial_goal,
         device_id=state.device_id,
-        focused_app_info=focused_app_info,
-        screensize=screensize,
+        focused_app_info=get_focused_app_info(),
+        screensize=get_screen_size(),
         latest_ui_hierarchy=state.latest_ui_hierarchy,
         subgoal_history=state.subgoal_history,
         current_subgoal=state.current_subgoal,
-        device_date=device_date,
+        device_date=get_date(),
         memory=state.memory,
     )
     messages = [

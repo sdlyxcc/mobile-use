@@ -3,7 +3,8 @@ import time
 from pathlib import Path
 
 from langchain_core.messages import BaseMessage
-from minitap.utils.adb import get_screenshot_base64
+
+from minitap.controllers.mobile_command_controller import take_screenshot
 from minitap.utils.media import compress_base64_jpeg
 
 
@@ -26,8 +27,7 @@ def record_interaction(trace_id: str, response: BaseMessage):
 
     # screenshot_base64 = screenshot_artifacts[0].da    ta
 
-    screenshot_base64 = get_screenshot_base64()
-
+    screenshot_base64 = take_screenshot()
     compressed_screenshot_base64 = compress_base64_jpeg(screenshot_base64, 20)
     timestamp = time.time()
     folder = Path(__file__).parent.joinpath(f"../../traces/{trace_id}").resolve()

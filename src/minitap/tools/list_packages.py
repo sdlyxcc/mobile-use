@@ -6,7 +6,7 @@ from langgraph.types import Command
 from typing_extensions import Annotated
 
 from minitap.agents.hopper.hopper import HopperOutput, hopper
-from minitap.client.adb import get_device
+from minitap.controllers.platform_specific_commands import list_packages as list_packages_command
 from minitap.graph.state import State
 
 
@@ -17,10 +17,7 @@ async def list_packages(
 ) -> Command:
     """List installed packages on the device."""
     print("Listing packages...")
-
-    device = get_device()
-    cmd = ["pm", "list", "packages", "-f"]
-    output: str = device.shell(" ".join(cmd))  # type: ignore
+    output: str = list_packages_command()
 
     try:
         hopper_output: HopperOutput = await hopper(
