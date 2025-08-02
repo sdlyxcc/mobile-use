@@ -42,7 +42,6 @@ def _stream_worker():
                         height = data.get("height")
                         platform = data.get("platform")
 
-                        # Fetch and encode the image
                         image_url = f"{MAESTRO_STUDIO_SERVER_ROOT}{screenshot_path}"
                         image_response = requests.get(image_url)
                         image_response.raise_for_status()
@@ -61,7 +60,7 @@ def _stream_worker():
         except requests.exceptions.RequestException as e:
             print(f"Connection error in stream worker: {e}. Retrying in 2 seconds...")
             with _data_lock:
-                _latest_screen_data = None  # Clear data on disconnect
+                _latest_screen_data = None
             time.sleep(2)
 
 
@@ -109,6 +108,18 @@ async def get_screen_info():
     return JSONResponse(content=data)
 
 
+@app.get("/health-check")
+async def health_check():
+    """Check if the Maestro Studio server is healthy."""
+    health_url = f"{MAESTRO_STUDIO_API_URL}/banner-message"
+    try:
+        response = requests.get(health_url, timeout=5)
+        response.raise_for_status()
+        return JSONResponse(content=response.json())
+    except requests.exceptions.RequestException as e:
+        raise HTTPException(status_code=503, detail=f"Maestro Studio not available: {e}")
+
+
 if __name__ == "__main__":
     print("--- Starting Maestro Screen Server ---")
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="0.0.0.0", port=9998)
