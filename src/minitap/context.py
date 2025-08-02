@@ -75,5 +75,8 @@ class DeviceContext:
 device_context: ContextVar[Optional[DeviceContext]] = ContextVar("device_context", default=None)
 
 
-def get_device_context() -> Optional[DeviceContext]:
-    return device_context.get()
+def get_device_context() -> DeviceContext:
+    context = device_context.get()
+    if context is None:
+        raise ValueError("Device context is not initialized")
+    return context
