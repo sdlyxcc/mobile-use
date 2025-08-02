@@ -29,7 +29,7 @@ def test_format_selector_with_text():
     request = SelectorRequest(text="Click me")
     result = format_selector_request_for_yaml(request)
     assert result is not None
-    assert result == " Click me\n"
+    assert result == "\n text: Click me\n"
 
 
 def test_format_selector_with_nothing():
