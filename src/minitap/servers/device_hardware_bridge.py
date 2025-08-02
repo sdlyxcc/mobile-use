@@ -98,7 +98,7 @@ class DeviceHardwareBridge:
                     self.process.kill()
                 break
 
-            connected_match = re.search(r"Connected to device (\S+)", line)
+            connected_match = re.search(r"Running on (\S+)", line)
             if connected_match:
                 with self.lock:
                     self.device_id = connected_match.group(1)
