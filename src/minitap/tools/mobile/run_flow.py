@@ -29,7 +29,6 @@ def run_flow(
 
 
 run_flow_wrapper = ToolWrapper(
-    name="run_flow",
     tool_fn=run_flow,
     on_success_fn=lambda: "Flow run successfully.",
     on_failure_fn=lambda: "Failed to run flow.",

@@ -32,7 +32,6 @@ def long_press_on(
 
 
 long_press_on_wrapper = ToolWrapper(
-    name="long_press_on",
     tool_fn=long_press_on,
     on_success_fn=lambda: "Long press on is successful.",
     on_failure_fn=lambda: "Failed to long press on.",

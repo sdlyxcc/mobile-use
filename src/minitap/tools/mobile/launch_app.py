@@ -28,7 +28,6 @@ def launch_app(
 
 
 launch_app_wrapper = ToolWrapper(
-    name="launch_app",
     tool_fn=launch_app,
     on_success_fn=lambda package_name: f"App {package_name} launched successfully.",
     on_failure_fn=lambda package_name: f"Failed to launch app {package_name}.",

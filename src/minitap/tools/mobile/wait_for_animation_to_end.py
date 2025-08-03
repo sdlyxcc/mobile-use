@@ -33,7 +33,6 @@ def wait_for_animation_to_end(
 
 
 wait_for_animation_to_end_wrapper = ToolWrapper(
-    name="wait_for_animation_to_end",
     tool_fn=wait_for_animation_to_end,
     on_success_fn=lambda: "Animation ended successfully.",
     on_failure_fn=lambda: "Failed to end animation.",

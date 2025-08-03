@@ -29,7 +29,6 @@ def take_screenshot(
 
 
 take_screenshot_wrapper = ToolWrapper(
-    name="take_screenshot",
     tool_fn=take_screenshot,
     on_success_fn=lambda: "Screenshot taken successfully.",
     on_failure_fn=lambda: "Failed to take screenshot.",

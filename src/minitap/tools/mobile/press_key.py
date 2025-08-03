@@ -29,7 +29,6 @@ def press_key(
 
 
 press_key_wrapper = ToolWrapper(
-    name="press_key",
     tool_fn=press_key,
     on_success_fn=lambda key: f"Key {key.value} pressed successfully.",
     on_failure_fn=lambda key: f"Failed to press key {key.value}.",

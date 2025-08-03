@@ -28,7 +28,6 @@ def input_text(
 
 
 input_text_wrapper = ToolWrapper(
-    name="input_text",
     tool_fn=input_text,
     on_success_fn=lambda text: f"Successfully typed {text}",
     on_failure_fn=lambda text: f"Failed to input text {text}",

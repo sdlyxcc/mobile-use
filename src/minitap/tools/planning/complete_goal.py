@@ -49,7 +49,6 @@ async def complete_goal(
 
 
 complete_goal_wrapper = ToolWrapper(
-    name="complete_goal",
     tool_fn=complete_goal,
     on_success_fn=lambda reason: f"Goal completed: {reason}",
     on_failure_fn=lambda reason: f"Failed to complete goal: {reason}",

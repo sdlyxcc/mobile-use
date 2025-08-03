@@ -27,7 +27,6 @@ def erase_text(
 
 
 erase_text_wrapper = ToolWrapper(
-    name="erase_text",
     tool_fn=erase_text,
     on_success_fn=lambda: "Text erased successfully.",
     on_failure_fn=lambda: "Failed to erase text.",

@@ -28,7 +28,6 @@ def stop_app(
 
 
 stop_app_wrapper = ToolWrapper(
-    name="stop_app",
     tool_fn=stop_app,
     on_success_fn=lambda package_name: f"App {package_name} stopped successfully.",
     on_failure_fn=lambda package_name: f"Failed to stop app {package_name}.",

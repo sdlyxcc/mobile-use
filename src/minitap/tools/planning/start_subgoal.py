@@ -3,8 +3,10 @@ from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langgraph.prebuilt import InjectedState
 from langgraph.types import Command
-from minitap.graph.state import State, Subgoal
 from typing_extensions import Annotated
+
+from minitap.graph.state import State, Subgoal
+from minitap.tools.tool_wrapper import ToolWrapper
 
 
 @tool
@@ -43,10 +45,17 @@ async def start_subgoal(
         update={
             "messages": [
                 ToolMessage(
-                    content=f"Starting goal '{new_subgoal.description}'",
+                    content=start_subgoal_wrapper.on_success_fn(new_subgoal.description),
                     tool_call_id=tool_call_id,
                 ),
             ],
             "current_subgoal": new_subgoal,
         },
     )
+
+
+start_subgoal_wrapper = ToolWrapper(
+    tool_fn=start_subgoal,
+    on_success_fn=lambda description: f"Starting goal '{description}'",
+    on_failure_fn=lambda description: f"Failed to start goal '{description}'.",
+)

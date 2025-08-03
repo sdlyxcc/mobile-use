@@ -31,7 +31,6 @@ def copy_text_from(
 
 
 copy_text_from_wrapper = ToolWrapper(
-    name="copy_text_from",
     tool_fn=copy_text_from,
     on_success_fn=lambda: "Text copied successfully.",
     on_failure_fn=lambda: "Failed to copy text.",

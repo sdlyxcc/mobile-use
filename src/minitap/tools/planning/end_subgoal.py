@@ -7,6 +7,7 @@ from typing_extensions import Annotated
 
 from minitap.agents.judge.judge import JudgeOutput, judge
 from minitap.graph.state import State
+from minitap.tools.tool_wrapper import ToolWrapper
 
 
 @tool
@@ -88,7 +89,7 @@ async def end_subgoal(
         update={
             "messages": [
                 ToolMessage(
-                    content=f"Goal '{subgoal.description}' ended.",
+                    content=end_subgoal_wrapper.on_success_fn(subgoal.description),
                     tool_call_id=tool_call_id,
                 ),
             ],
@@ -96,3 +97,10 @@ async def end_subgoal(
             "current_subgoal": None,
         },
     )
+
+
+end_subgoal_wrapper = ToolWrapper(
+    tool_fn=end_subgoal,
+    on_success_fn=lambda subgoal_description: f"Goal '{subgoal_description}' ended.",
+    on_failure_fn=lambda subgoal_description: f"Failed to end goal '{subgoal_description}'.",
+)

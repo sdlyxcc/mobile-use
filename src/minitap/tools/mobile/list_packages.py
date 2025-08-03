@@ -57,7 +57,6 @@ async def list_packages(
 
 
 list_packages_wrapper = ToolWrapper(
-    name="list_packages",
     tool_fn=list_packages,
     on_success_fn=lambda: "Packages listed successfully.",
     on_failure_fn=lambda: "Failed to list packages.",

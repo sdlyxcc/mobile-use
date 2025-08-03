@@ -27,7 +27,6 @@ def back(
 
 
 back_wrapper = ToolWrapper(
-    name="back",
     tool_fn=back,
     on_success_fn=lambda: "Back pressed successfully.",
     on_failure_fn=lambda: "Failed to press back.",

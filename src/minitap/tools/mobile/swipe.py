@@ -29,7 +29,6 @@ def swipe(
 
 
 swipe_wrapper = ToolWrapper(
-    name="swipe",
     tool_fn=swipe,
     on_success_fn=lambda: "Swipe is successful.",
     on_failure_fn=lambda: "Failed to swipe.",

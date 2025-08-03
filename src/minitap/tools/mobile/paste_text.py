@@ -27,7 +27,6 @@ def paste_text(
 
 
 paste_text_wrapper = ToolWrapper(
-    name="paste_text",
     tool_fn=paste_text,
     on_success_fn=lambda: "Text pasted successfully.",
     on_failure_fn=lambda: "Failed to paste text.",

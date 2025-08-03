@@ -32,7 +32,6 @@ def tap(
 
 
 tap_wrapper = ToolWrapper(
-    name="tap",
     tool_fn=tap,
     on_success_fn=lambda: "Tap is successful.",
     on_failure_fn=lambda: "Failed to tap.",
