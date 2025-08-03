@@ -1,3 +1,5 @@
+from operator import add
+
 from langgraph.prebuilt.chat_agent_executor import AgentStatePydantic
 from pydantic import BaseModel
 from typing_extensions import Annotated, Optional
@@ -14,9 +16,8 @@ class Subgoal(BaseModel):
 class State(AgentStatePydantic):
     initial_goal: Annotated[str, "Initial goal given by the user"]
     is_goal_achieved: Annotated[bool, "Whether the goal has been achieved"]
-    device_id: Annotated[str, "ID of the device we're interacting with"]
     trace_id: Annotated[str | None, "ID of the run"]
-    latest_ui_hierarchy: Annotated[str | None, "Latest UI hierarchy"]
     subgoal_history: Annotated[list[Subgoal], "History of subgoals"]
     current_subgoal: Annotated[Optional[Subgoal], "Current subgoal"]
     memory: Annotated[Optional[str], "Your long term memory"]
+    past_observations: Annotated[list[str], "Observations about the environment", add]
