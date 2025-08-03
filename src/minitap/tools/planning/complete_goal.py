@@ -6,6 +6,7 @@ from langgraph.types import Command
 from typing_extensions import Annotated
 
 from minitap.graph.state import State
+from minitap.tools.tool_wrapper import ToolWrapper
 
 
 @tool
@@ -37,8 +38,19 @@ async def complete_goal(
     return Command(
         update={
             "messages": [
-                ToolMessage(content=f"Goal completed: {reason}", tool_call_id=tool_call_id),
+                ToolMessage(
+                    content=complete_goal_wrapper.on_success_fn(reason),
+                    tool_call_id=tool_call_id,
+                ),
             ],
             "is_goal_achieved": True,
         },
     )
+
+
+complete_goal_wrapper = ToolWrapper(
+    name="complete_goal",
+    tool_fn=complete_goal,
+    on_success_fn=lambda reason: f"Goal completed: {reason}",
+    on_failure_fn=lambda reason: f"Failed to complete goal: {reason}",
+)
