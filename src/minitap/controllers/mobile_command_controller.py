@@ -44,8 +44,9 @@ def run_flow(yaml: str, dry_run: bool = False):
     payload = RunFlowRequest(yaml=yaml, dryRun=dry_run).model_dump(by_alias=True)
     response = device_hardware_api.post("run-command", json=payload)
     logger.info("Status code: " + str(response.status_code))
-    logger.info("Raw response text: " + response.text)
-    return response.json()
+    json_response = response.json()
+    json_response = {k: v for k, v in json_response.items() if v is not None}
+    return json_response
 
 
 class CoordinatesSelectorRequest(BaseModel):
@@ -86,12 +87,12 @@ def format_selector_request_for_yaml(request: SelectorRequest):
     return yaml
 
 
-def tap(request: SelectorRequest, index: Optional[int] = None):
+def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None):
     """
     Tap on a selector.
     Index is optional and is used when you have multiple views matching the same selector.
     """
-    yaml = format_selector_request_for_yaml(request)
+    yaml = format_selector_request_for_yaml(selector_request)
     if not yaml:
         error = "Invalid tap selector request, could not format yaml"
         logger.error(error)
@@ -99,16 +100,21 @@ def tap(request: SelectorRequest, index: Optional[int] = None):
     flow_input = f"tapOn:{yaml}"
     if index:
         flow_input += f"\nindex: {index}\n"
-    return run_flow(flow_input)
+    return run_flow(flow_input, dry_run=dry_run)
 
 
-def long_press_on(request: SelectorRequest):
-    yaml = format_selector_request_for_yaml(request)
+def long_press_on(
+    selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None
+):
+    yaml = format_selector_request_for_yaml(selector_request)
     if not yaml:
         error = "Invalid long press on selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    return run_flow(f"longPressOn:{yaml}")
+    flow_input = f"longPressOn:{yaml}"
+    if index:
+        flow_input += f"\nindex: {index}\n"
+    return run_flow(flow_input, dry_run=dry_run)
 
 
 class SwipeStartEndCoordinatesRequest(BaseModel):
@@ -128,76 +134,75 @@ class SwipeRequest(BaseModel):
     duration: Optional[int] = None  # in ms, default is 400ms
 
 
-def swipe(request: SwipeRequest):
+def swipe(swipe_request: SwipeRequest, dry_run: bool = False):
     yaml = ""
-    if request.start_end_coordinates:
-        yaml += f"\n start: {request.start_end_coordinates.start.x},"
-        yaml += f"{request.start_end_coordinates.start.y}\n"
-        yaml += (
-            f"\n end: {request.start_end_coordinates.end.x},{request.start_end_coordinates.end.y}\n"
-        )
-    elif request.start_end_percentages:
-        yaml += f"\n start: {request.start_end_percentages.start.x_percent}%,"
-        yaml += f"{request.start_end_percentages.start.y_percent}%\n"
-        yaml += f"\n end: {request.start_end_percentages.end.x_percent}%,"
-        yaml += f"{request.start_end_percentages.end.y_percent}%\n"
-    if request.direction:
-        yaml += f"\n direction: {request.direction}\n"
-    if request.duration:
-        yaml += f"\n duration: {request.duration}\n"
+    if swipe_request.start_end_coordinates:
+        yaml += f"\n start: {swipe_request.start_end_coordinates.start.x},"
+        yaml += f"{swipe_request.start_end_coordinates.start.y}\n"
+        yaml += f"\n end: {swipe_request.start_end_coordinates.end.x},"
+        yaml += f"{swipe_request.start_end_coordinates.end.y}\n"
+    elif swipe_request.start_end_percentages:
+        yaml += f"\n start: {swipe_request.start_end_percentages.start.x_percent}%,"
+        yaml += f"{swipe_request.start_end_percentages.start.y_percent}%\n"
+        yaml += f"\n end: {swipe_request.start_end_percentages.end.x_percent}%,"
+        yaml += f"{swipe_request.start_end_percentages.end.y_percent}%\n"
+    if swipe_request.direction:
+        yaml += f"\n direction: {swipe_request.direction}\n"
+    if swipe_request.duration:
+        yaml += f"\n duration: {swipe_request.duration}\n"
     if not yaml:
         error = "Invalid swipe selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    return run_flow(f"swipe:{yaml}")
+    return run_flow(f"swipe:{yaml}", dry_run=dry_run)
 
 
 ##### Text related commands #####
 
 
-def input_text(text: str):
-    return run_flow(f"inputText: {text}\n")
+def input_text(text: str, dry_run: bool = False):
+    return run_flow(f"inputText: {text}\n", dry_run=dry_run)
 
 
-def copy_text_from(request: SelectorRequest):
-    yaml = format_selector_request_for_yaml(request)
+def copy_text_from(selector_request: SelectorRequest, dry_run: bool = False):
+    yaml = format_selector_request_for_yaml(selector_request)
     if not yaml:
         error = "Invalid copy text from selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    return run_flow(f"copyTextFrom:{yaml}\n")
+    return run_flow(f"copyTextFrom:{yaml}\n", dry_run=dry_run)
 
 
-def paste_text():
-    return run_flow("pasteText\n")
+def paste_text(dry_run: bool = False):
+    return run_flow("pasteText\n", dry_run=dry_run)
 
 
-def erase_text(nb_chars: Optional[int] = None):
+def erase_text(nb_chars: Optional[int] = None, dry_run: bool = False):
     """
     Removes characters from the currently selected textfield (if any)
     Removes 50 characters if nb_chars is not specified.
     """
     if nb_chars is None:
-        return run_flow("eraseText\n")
-    return run_flow(f"eraseText: {nb_chars}\n")
+        return run_flow("eraseText\n", dry_run=dry_run)
+    return run_flow(f"eraseText: {nb_chars}\n", dry_run=dry_run)
 
 
 ##### App related commands #####
 
 
-def launch_app(package_name: str):
-    return run_flow(f"launchApp: {package_name}\n")
+def launch_app(package_name: str, dry_run: bool = False):
+    return run_flow(f"launchApp: {package_name}\n", dry_run=dry_run)
 
 
-def stop_app(package_name: str):
-    return run_flow(f"stopApp: {package_name}\n")
+def stop_app(package_name: str, dry_run: bool = False):
+    return run_flow(f"stopApp: {package_name}\n", dry_run=dry_run)
 
 
 ##### Key related commands #####
 
 
-def back():
-    return run_flow("back\n")
+def back(dry_run: bool = False):
+    return run_flow("back\n", dry_run=dry_run)
 
 
 class Key(Enum):
@@ -206,8 +211,8 @@ class Key(Enum):
     BACK = "Back"
 
 
-def press_key(key: Key):
-    return run_flow(f"pressKey: {key.value}\n")
+def press_key(key: Key, dry_run: bool = False):
+    return run_flow(f"pressKey: {key.value}\n", dry_run=dry_run)
 
 
 #### Other commands ####
@@ -219,10 +224,10 @@ class WaitTimeout(Enum):
     LONG = 5000
 
 
-def wait_for_animation_to_end(timeout: Optional[WaitTimeout] = None):
+def wait_for_animation_to_end(timeout: Optional[WaitTimeout] = None, dry_run: bool = False):
     if timeout is None:
-        return run_flow("waitForAnimationToEnd\n")
-    return run_flow(f"waitForAnimationToEnd:\n  timeout: {timeout.value}\n")
+        return run_flow("waitForAnimationToEnd\n", dry_run=dry_run)
+    return run_flow(f"waitForAnimationToEnd:\n  timeout: {timeout.value}\n", dry_run=dry_run)
 
 
 if __name__ == "__main__":
