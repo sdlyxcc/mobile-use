@@ -9,24 +9,6 @@ from minitap.utils.media import compress_base64_jpeg
 
 
 def record_interaction(trace_id: str, response: BaseMessage):
-    # screenshot: ToolMessage | None = await screenshot_tool.ainvoke(
-    #     {
-    #         "type": "tool_call",
-    #         "args": {
-    #             "device_id": device_id,
-    #         },
-    #         "id": uuid.uuid4().hex,
-    #     }
-    # )
-    # if not screenshot:
-    #     return "No screenshot found"
-
-    # screenshot_artifacts: list[ImageContent] = screenshot.artifact
-    # if not screenshot_artifacts:
-    #     return "No screenshot artifacts found"
-
-    # screenshot_base64 = screenshot_artifacts[0].da    ta
-
     screenshot_base64 = take_screenshot()
     compressed_screenshot_base64 = compress_base64_jpeg(screenshot_base64, 20)
     timestamp = time.time()
