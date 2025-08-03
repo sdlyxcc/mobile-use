@@ -20,7 +20,7 @@ from minitap.constants import (
 )
 from minitap.context import DeviceContext
 from minitap.controllers.mobile_command_controller import ScreenDataResponse, get_screen_data
-from minitap.controllers.platform_specific_commands import get_first_device_id
+from minitap.controllers.platform_specific_commands_controller import get_first_device_id
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.servers.utils import are_ports_available

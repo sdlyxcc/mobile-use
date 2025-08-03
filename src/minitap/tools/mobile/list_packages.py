@@ -6,8 +6,11 @@ from langgraph.types import Command
 from typing_extensions import Annotated
 
 from minitap.agents.hopper.hopper import HopperOutput, hopper
-from minitap.controllers.platform_specific_commands import list_packages as list_packages_command
+from minitap.controllers.platform_specific_commands_controller import (
+    list_packages as list_packages_command,
+)
 from minitap.graph.state import State
+from minitap.tools.tool_wrapper import ToolWrapper
 
 
 @tool
@@ -15,8 +18,6 @@ async def list_packages(
     tool_call_id: Annotated[str, InjectedToolCallId],
     state: Annotated[State, InjectedState],
 ) -> Command:
-    """List installed packages on the device."""
-    print("Listing packages...")
     output: str = list_packages_command()
 
     try:
@@ -31,8 +32,9 @@ async def list_packages(
             update={
                 "messages": [
                     ToolMessage(
-                        content="Failed to extract insights from previous task.",
+                        content=list_packages_wrapper.on_failure_fn(),
                         tool_call_id=tool_call_id,
+                        additional_kwargs={"output": output},
                     ),
                 ],
             },
@@ -42,9 +44,21 @@ async def list_packages(
         update={
             "messages": [
                 ToolMessage(
-                    content=hopper_output.step + ": " + hopper_output.output,
+                    content=list_packages_wrapper.on_success_fn()
+                    + ": "
+                    + hopper_output.step
+                    + ": "
+                    + hopper_output.output,
                     tool_call_id=tool_call_id,
                 ),
             ],
         },
     )
+
+
+list_packages_wrapper = ToolWrapper(
+    name="list_packages",
+    tool_fn=list_packages,
+    on_success_fn=lambda: "Packages listed successfully.",
+    on_failure_fn=lambda: "Failed to list packages.",
+)
