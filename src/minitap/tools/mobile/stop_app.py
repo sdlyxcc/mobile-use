@@ -1,0 +1,35 @@
+from langchain_core.messages import ToolMessage
+from langchain_core.tools import tool
+from langchain_core.tools.base import InjectedToolCallId
+from langgraph.types import Command
+from typing_extensions import Annotated
+
+from minitap.controllers.mobile_command_controller import stop_app as stop_app_controller
+from minitap.tools.tool_wrapper import ToolWrapper
+
+
+@tool
+def stop_app(
+    tool_call_id: Annotated[str, InjectedToolCallId],
+    package_name: str,
+):
+    output = stop_app_controller(package_name)
+    return Command(
+        update={
+            "messages": [
+                ToolMessage(
+                    tool_call_id=tool_call_id,
+                    content=stop_app_wrapper.on_success_fn(package_name),
+                    additional_kwargs={"output": output},
+                ),
+            ],
+        },
+    )
+
+
+stop_app_wrapper = ToolWrapper(
+    name="stop_app",
+    tool_fn=stop_app,
+    on_success_fn=lambda package_name: f"App {package_name} stopped successfully.",
+    on_failure_fn=lambda package_name: f"Failed to stop app {package_name}.",
+)
