@@ -4,28 +4,30 @@ from langchain_core.messages import (
     AIMessage,
     BaseMessage,
     HumanMessage,
-    RemoveMessage,
-    ToolMessage,
 )
 from langgraph.constants import END, START
 from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
+from minitap.agents.contextor.contextor import contextor_node
+from minitap.agents.cortex.cortex import cortex_node
 from minitap.agents.executor.executor import executor_node
 from minitap.agents.memora.memora import memora
+from minitap.agents.orchestrator.orchestrator import orchestrator_node
 from minitap.agents.planner.planner import planner_node
-from minitap.agents.reasoner.reasoner import reasoner_node
 from minitap.agents.spectron.spectron import spectron
-from minitap.constants import MAX_MESSAGES_IN_HISTORY
+from minitap.agents.summarizer.summarizer import summarizer_node
 from minitap.controllers.mobile_command_controller import wait_for_animation_to_end
 from minitap.graph.state import State
-from minitap.tools.index import ALL_TOOLS
-from minitap.tools.maestro import get_maestro_tools
+from minitap.tools.index import EXECUTOR_WRAPPERS_TOOLS, get_tools_from_wrappers
 from minitap.utils.conversations import (
     is_ai_message,
     is_tool_message,
 )
+from minitap.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 async def visualizer_node(state: State):
@@ -94,11 +96,28 @@ async def messager_node(state: State):
     return {"messages": messages}
 
 
-def follow_up_gate(
+def post_orchestrator_gate(
     state: State,
-) -> Literal["invoke_tools", "continue", "end"]:
-    print("Starting follow_up_gate", flush=True)
+) -> Literal["continue", "replan", "end"]:
+    logger.info("Starting post_orchestrator_gate", flush=True)
+    return "continue"
 
+
+def post_cortex_gate(
+    state: State,
+) -> Literal["continue", "end_subgoal"]:
+    logger.info("Starting post_cortex_gate", flush=True)
+    return "continue"
+
+
+def post_executor_gate(
+    state: State,
+) -> Literal["invoke_tools", "skip"]:
+    logger.info("Starting post_executor_gate", flush=True)
+    return "invoke_tools"
+
+
+def excution_test(state: State):
     messages = state.messages
     if not messages:
         return "continue"
@@ -119,57 +138,51 @@ def follow_up_gate(
     return "continue"
 
 
-def summarizer(state: State):
-    if len(state.messages) <= MAX_MESSAGES_IN_HISTORY:
-        return {}
-
-    nb_removal_candidates = len(state.messages) - MAX_MESSAGES_IN_HISTORY
-
-    remove_messages = []
-    start_removal = False
-
-    for msg in reversed(state.messages[:nb_removal_candidates]):
-        if isinstance(msg, (ToolMessage, HumanMessage)):
-            start_removal = True
-        if start_removal and msg.id:
-            remove_messages.append(RemoveMessage(id=msg.id))
-    return {
-        "messages": remove_messages,
-    }
-
-
 async def get_graph() -> CompiledStateGraph:
     graph_builder = StateGraph(State)
 
-    tools = ALL_TOOLS
-    maestro_tools = await get_maestro_tools()
-    tool_node = ToolNode(tools + maestro_tools)
+    ## Define nodes
+    graph_builder.add_node("planner", planner_node)
+    graph_builder.add_node("orchestrator", orchestrator_node)
 
-    graph_builder.add_node("planner", planner_node)  # prepare the plan before the loop
+    graph_builder.add_node("contextor", contextor_node)
 
-    graph_builder.add_node("visualizer", visualizer_node)  # always called
-    graph_builder.add_node("reasoner", reasoner_node)  # always called
-    graph_builder.add_node("memorizer", memorizer_node)
-    graph_builder.add_node("messager", messager_node)
-    graph_builder.add_node("tools", tool_node)
-    graph_builder.add_node("summarizer", summarizer)
+    graph_builder.add_node("cortex", cortex_node)
+
     graph_builder.add_node("executor", executor_node)
+    executor_tool_node = ToolNode(get_tools_from_wrappers(EXECUTOR_WRAPPERS_TOOLS))
+    graph_builder.add_node("executor_tools", executor_tool_node)
 
-    graph_builder.add_edge(START, "visualizer")
-    graph_builder.add_edge("visualizer", "memorizer")
-    graph_builder.add_edge("memorizer", "messager")
-    graph_builder.add_edge("messager", "summarizer")
-    graph_builder.add_edge("summarizer", "planner")
-    graph_builder.add_edge("tools", "visualizer")
+    graph_builder.add_node("summarizer", summarizer_node)
 
+    # Linking nodes
+    graph_builder.add_edge(START, "planner")
+    graph_builder.add_edge("planner", "orchestrator")
     graph_builder.add_conditional_edges(
-        "planner",
-        follow_up_gate,
+        "orchestrator",
+        post_orchestrator_gate,
         {
-            "invoke_tools": "tools",
-            "continue": "visualizer",
+            "continue": "contextor",
+            "replan": "planner",
             "end": END,
         },
     )
+    graph_builder.add_edge("contextor", "cortex")
+    graph_builder.add_conditional_edges(
+        "cortex",
+        post_cortex_gate,
+        {
+            "continue": "executor",
+            "end_subgoal": "orchestrator",
+        },
+    )
+    graph_builder.add_edge("cortex", "executor")
+    graph_builder.add_conditional_edges(
+        "executor",
+        post_executor_gate,
+        {"invoke_tools": "executor_tools", "skip": "summarizer"},
+    )
+    graph_builder.add_edge("executor_tools", "summarizer")
+    graph_builder.add_edge("summarizer", "contextor")
 
     return graph_builder.compile()
