@@ -1,4 +1,3 @@
-import asyncio
 from typing import Literal
 
 from langchain_core.messages import (
@@ -13,20 +12,18 @@ from langgraph.graph import StateGraph
 from langgraph.graph.state import CompiledStateGraph
 from langgraph.prebuilt import ToolNode
 
-from minitap.agents.handle_screenshot import handle_screenshot
-from minitap.agents.handle_ui_hierarchy import get_ui_hierarchy
-from minitap.agents.history_cleanup import history_cleanup
+from minitap.agents.executor.executor import executor_node
 from minitap.agents.memora.memora import memora
 from minitap.agents.planner.planner import planner_node
+from minitap.agents.reasoner.reasoner import reasoner_node
 from minitap.agents.spectron.spectron import spectron
 from minitap.constants import MAX_MESSAGES_IN_HISTORY
+from minitap.controllers.mobile_command_controller import wait_for_animation_to_end
 from minitap.graph.state import State
 from minitap.tools.index import ALL_TOOLS
 from minitap.tools.maestro import get_maestro_tools
 from minitap.utils.conversations import (
     is_ai_message,
-    is_fast_nonui_tool,
-    is_tool_for_name,
     is_tool_message,
 )
 
@@ -37,44 +34,20 @@ async def visualizer_node(state: State):
     last_message = state.messages[-1]
     if not is_tool_message(last_message):
         return {}
-    if is_fast_nonui_tool(last_message):
-        print("⏭️ Skipped UI hierarchy refresh.", flush=True)
-        return {}
 
-    latest_ui_hierarchy: str | None = None
-    screenshot_message: HumanMessage | None = None
-    transformed_messages: list[BaseMessage] = []
-    await asyncio.sleep(0.5)
-    latest_ui_hierarchy = await get_ui_hierarchy(state)
-
-    if is_tool_for_name(last_message, "take_screenshot"):
-        if last_message.artifact and len(last_message.artifact) > 0:
-            screenshot_handler_output = await handle_screenshot(state)
-            screenshot_message = screenshot_handler_output.screenshot_message
-            if screenshot_handler_output.messages:
-                transformed_messages.extend(screenshot_handler_output.messages)
-
-    if not latest_ui_hierarchy:
-        print(
-            "❌ Error: Electron could not be called, since no UI hierarchy"
-            " or screenshot was provided.",
-            flush=True,
-        )
-        transformed_messages.append(AIMessage(content="I could not analyze the current screen."))
-        return {"messages": transformed_messages}
+    wait_for_animation_to_end()
 
     electron_output = await spectron(
-        ui_hierarchy=latest_ui_hierarchy,
         initial_goal=state.initial_goal,
         current_subgoal=state.current_subgoal,
-        screenshot_message=screenshot_message,
     )
-    transformed_messages.append(
-        AIMessage(
-            content="Here is the current screen description:\n\n" + electron_output.description
-        )
-    )
-    return {"messages": transformed_messages, "latest_ui_hierarchy": latest_ui_hierarchy}
+    return {
+        "messages": [
+            AIMessage(
+                content="Here is the current screen description:\n\n" + electron_output.description
+            )
+        ],
+    }
 
 
 async def memorizer_node(state: State):
@@ -118,9 +91,7 @@ async def messager_node(state: State):
         else:
             messages.append(HumanMessage(content="Call `complete_goal` to answer me."))
 
-    return {
-        **history_cleanup(state),
-    }
+    return {"messages": messages}
 
 
 def follow_up_gate(
@@ -142,20 +113,6 @@ def follow_up_gate(
         tool_calls = getattr(last_message, "tool_calls", None)
         if tool_calls and len(tool_calls) > 0:
             print("🔨👁️ Found tool calls:", tool_calls)
-            # for tool_call in tool_calls:
-            #     tool_call = cast(ToolCall, tool_call)
-            #     if tool_call. == "run_flow":
-            #         # get thought_process that is an argument of the tool call
-            #         thought_process = tool_call.args.get("thought_process")
-            #         flow_yaml = tool_call.args.get("flow_yaml")
-            #         if thought_process and flow_yaml:
-            #             print(
-            #                 "🔨⚡ Thought process and flow_yaml arguments found, ensuring maestro"
-            #                 " flow is valid..."
-            #             )
-            #             return "invoke_tools"  # sanitize_maestro_flow(flow_yaml=flow_yaml,
-            #             thought_process=thought_process, subgoal=state.current_subgoal,
-            #             ui_hierarchy=state.latest_ui_hierarchy)
             return "invoke_tools"
         else:
             print("🔨❌ No tool calls found")
@@ -188,12 +145,15 @@ async def get_graph() -> CompiledStateGraph:
     maestro_tools = await get_maestro_tools()
     tool_node = ToolNode(tools + maestro_tools)
 
-    graph_builder.add_node("visualizer", visualizer_node)
+    graph_builder.add_node("planner", planner_node)  # prepare the plan before the loop
+
+    graph_builder.add_node("visualizer", visualizer_node)  # always called
+    graph_builder.add_node("reasoner", reasoner_node)  # always called
     graph_builder.add_node("memorizer", memorizer_node)
     graph_builder.add_node("messager", messager_node)
-    graph_builder.add_node("planner", planner_node)
     graph_builder.add_node("tools", tool_node)
     graph_builder.add_node("summarizer", summarizer)
+    graph_builder.add_node("executor", executor_node)
 
     graph_builder.add_edge(START, "visualizer")
     graph_builder.add_edge("visualizer", "memorizer")
