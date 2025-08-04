@@ -13,7 +13,6 @@ logger = get_logger(__name__)
 
 
 def add_agent_thought(a: list[str], b: Union[str, list[str]]) -> list[str]:
-    logger.info(f"New agent thought: {b}")
     if is_execution_setup_set():
         record_interaction(response=AIMessage(content=str(b)))
     if isinstance(b, str):
