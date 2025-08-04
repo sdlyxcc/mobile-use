@@ -35,12 +35,12 @@ Each subgoal should be:
 
 #### **Initial Goal**: "Open WhatsApp and send 'I’m running late' to Alice"
 
-**→ Plan**:
+**Plan**:
 
 - Open the WhatsApp app
 - Locate or search for Alice
 - Open the conversation with Alice
-- Type the message “I’m running late”
+- Type the message "I’m running late"
 - Send the message
 
 #### **Replanning Example**
@@ -52,14 +52,14 @@ Each subgoal should be:
 - Search bar was present on top of the chat screen
 - Keyboard appeared after tapping search
 
-**→ New Plan**:
+**New Plan**:
 
 - Unlock the phone if needed
 - Open WhatsApp
 - Tap the search bar
-- Search for “Alice”
+- Search for "Alice"
 - Select the correct chat
-- Type and send “I’m running late”
+- Type and send "I’m running late"
 
 ### Input
 

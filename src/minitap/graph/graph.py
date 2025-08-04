@@ -25,27 +25,27 @@ logger = get_logger(__name__)
 def post_orchestrator_gate(
     state: State,
 ) -> Literal["continue", "replan", "end"]:
-    logger.info("Starting post_orchestrator_gate", flush=True)
+    logger.info("Starting post_orchestrator_gate")
     if one_of_them_is_failure(state.subgoal_plan):
-        logger.info("One of the subgoals is in failure state, asking to replan", flush=True)
+        logger.info("One of the subgoals is in failure state, asking to replan")
         return "replan"
 
     if all_completed(state.subgoal_plan):
-        logger.info("All subgoals are completed, ending the goal", flush=True)
+        logger.info("All subgoals are completed, ending the goal")
         return "end"
 
     if not get_current_subgoal(state.subgoal_plan):
-        logger.info("No subgoal running, ending the goal", flush=True)
+        logger.info("No subgoal running, ending the goal")
         return "end"
 
-    logger.info("Goal is not achieved, continuing", flush=True)
+    logger.info("Goal is not achieved, continuing")
     return "continue"
 
 
 def post_cortex_gate(
     state: State,
 ) -> Literal["continue", "end_subgoal"]:
-    logger.info("Starting post_cortex_gate", flush=True)
+    logger.info("Starting post_cortex_gate")
     if not state.structured_decisions:
         return "end_subgoal"
     return "continue"
@@ -54,7 +54,7 @@ def post_cortex_gate(
 def post_executor_gate(
     state: State,
 ) -> Literal["invoke_tools", "skip"]:
-    logger.info("Starting post_executor_gate", flush=True)
+    logger.info("Starting post_executor_gate")
     messages = state.messages
     if not messages:
         return "skip"
