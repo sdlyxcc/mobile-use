@@ -51,7 +51,7 @@ async def orchestrator_node(state: State):
         SystemMessage(content=system_message),
     ]
 
-    llm = get_llm()
+    llm = get_llm(override_provider="openai", override_model="gpt-4o", override_temperature=0.4)
     llm = llm.with_structured_output(OrchestratorOutput)
     response: OrchestratorOutput = await llm.ainvoke(messages)  # type: ignore
 

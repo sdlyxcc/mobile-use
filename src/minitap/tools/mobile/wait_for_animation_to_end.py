@@ -18,6 +18,17 @@ def wait_for_animation_to_end(
     tool_call_id: Annotated[str, InjectedToolCallId],
     timeout: Optional[WaitTimeout],
 ):
+    """
+    Waits for ongoing animations or videos to finish before continuing.
+
+    If a `timeout` (in milliseconds) is set, the command proceeds after the timeout even if
+    the animation hasn't ended.
+    The flow continues immediately once the animation is detected as complete.
+
+    Example:
+        - waitForAnimationToEnd
+        - waitForAnimationToEnd: { timeout: 5000 }
+    """
     output = wait_for_animation_to_end_controller(timeout=timeout)
     return Command(
         update={

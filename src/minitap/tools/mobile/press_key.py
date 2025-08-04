@@ -14,6 +14,7 @@ def press_key(
     tool_call_id: Annotated[str, InjectedToolCallId],
     key: Key,
 ):
+    """Press a key on the device."""
     output = press_key_controller(key)
     return Command(
         update={

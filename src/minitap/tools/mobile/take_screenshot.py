@@ -15,6 +15,9 @@ from minitap.utils.media import compress_base64_jpeg
 def take_screenshot(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
+    """
+    Take a screenshot of the device.
+    """
     output = take_screenshot_controller()
     compressed_image_base64 = compress_base64_jpeg(output)
     return Command(

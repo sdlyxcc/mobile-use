@@ -13,6 +13,24 @@ def input_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
     text: str,
 ):
+    """
+    Inputs the specified text into the UI (works even if no field is focused).
+
+    Example:
+        - inputText: "Hello World"
+
+    Notes:
+    - Unicode not supported on Android.
+
+    Random Input Options:
+        - inputRandomEmail
+        - inputRandomPersonName
+        - inputRandomNumber (with optional 'length', default 8)
+        - inputRandomText (with optional 'length', default 8)
+
+    Tip:
+        Use `copyTextFrom` to reuse generated inputs in later steps.
+    """
     output = input_text_controller(text=text)
     return Command(
         update={

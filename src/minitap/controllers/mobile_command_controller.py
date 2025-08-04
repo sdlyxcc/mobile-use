@@ -193,7 +193,9 @@ def launch_app(package_name: str, dry_run: bool = False):
     return run_flow(f"launchApp: {package_name}\n", dry_run=dry_run)
 
 
-def stop_app(package_name: str, dry_run: bool = False):
+def stop_app(package_name: Optional[str] = None, dry_run: bool = False):
+    if package_name is None:
+        return run_flow("stopApp\n", dry_run=dry_run)
     return run_flow(f"stopApp: {package_name}\n", dry_run=dry_run)
 
 

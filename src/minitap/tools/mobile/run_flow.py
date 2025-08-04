@@ -14,6 +14,9 @@ def run_flow(
     yaml: str,
     dry_run: bool = False,
 ):
+    """
+    Run a flow i.e, a sequence of commands.
+    """
     output = run_flow_controller(yaml=yaml, dry_run=dry_run)
     return Command(
         update={

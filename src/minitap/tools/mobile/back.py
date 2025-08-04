@@ -12,6 +12,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 def back(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
+    """Navigates to the previous screen. (Only works on Android for the moment)"""
     output = back_controller()
     return Command(
         update={
@@ -28,6 +29,6 @@ def back(
 
 back_wrapper = ToolWrapper(
     tool_fn=back,
-    on_success_fn=lambda: "Back pressed successfully.",
-    on_failure_fn=lambda: "Failed to press back.",
+    on_success_fn=lambda: "Navigated to the previous screen.",
+    on_failure_fn=lambda: "Failed to navigate to the previous screen.",
 )

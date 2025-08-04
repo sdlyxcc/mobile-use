@@ -1,3 +1,5 @@
+from typing import Optional
+
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
@@ -11,9 +13,13 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def stop_app(
     tool_call_id: Annotated[str, InjectedToolCallId],
-    package_name: str,
+    package_name: Optional[str] = None,
 ):
-    output = stop_app_controller(package_name)
+    """
+    Stops current application if it is running.
+    You can also specify the package name of the app to be stopped.
+    """
+    output = stop_app_controller(package_name=package_name)
     return Command(
         update={
             "messages": [
@@ -29,6 +35,6 @@ def stop_app(
 
 stop_app_wrapper = ToolWrapper(
     tool_fn=stop_app,
-    on_success_fn=lambda package_name: f"App {package_name} stopped successfully.",
-    on_failure_fn=lambda package_name: f"Failed to stop app {package_name}.",
+    on_success_fn=lambda package_name: f"App {package_name or 'current'} stopped successfully.",
+    on_failure_fn=lambda package_name: f"Failed to stop app {package_name or 'current'}.",
 )

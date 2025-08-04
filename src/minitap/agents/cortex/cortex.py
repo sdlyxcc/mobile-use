@@ -53,7 +53,7 @@ async def cortex_node(state: State):
             HumanMessage(content="Here is the UI hierarchy:\n" + state.latest_ui_hierarchy)
         )
 
-    llm = get_llm()
+    llm = get_llm(override_provider="openai", override_model="o3", override_temperature=0.2)
     llm = llm.with_structured_output(CortexOutput)
     response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
 

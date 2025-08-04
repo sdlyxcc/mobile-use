@@ -12,6 +12,17 @@ from minitap.tools.tool_wrapper import ToolWrapper
 def paste_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
+    """
+    Pastes text previously copied via `copyTextFrom` into the currently focused field.
+
+    Note:
+        The text field must be focused before using this command.
+
+    Example:
+        - copyTextFrom: { id: "someId" }
+        - tapOn: { id: "searchFieldId" }
+        - pasteText
+    """
     output = paste_text_controller()
     return Command(
         update={

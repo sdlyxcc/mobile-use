@@ -18,6 +18,10 @@ async def list_packages(
     tool_call_id: Annotated[str, InjectedToolCallId],
     state: Annotated[State, InjectedState],
 ) -> Command:
+    """
+    Lists all the applications on the device.
+    Outputs the full package names list (android) or bundle ids list (IOS).
+    """
     output: str = list_packages_command()
 
     try:

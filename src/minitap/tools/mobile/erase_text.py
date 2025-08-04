@@ -12,6 +12,17 @@ from minitap.tools.tool_wrapper import ToolWrapper
 def erase_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
+    """
+    Erases up to `count` characters from the currently selected text field (default: 50).
+
+    iOS Note:
+        This may be flaky on iOS. As a workaround:
+            - long_press_on("<input id>")
+            - tap_on("Select All")
+            - erase_text()
+
+    Matches 'clearText' in search.
+    """
     output = erase_text_controller()
     return Command(
         update={

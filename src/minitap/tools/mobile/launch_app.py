@@ -13,6 +13,7 @@ def launch_app(
     tool_call_id: Annotated[str, InjectedToolCallId],
     package_name: str,
 ):
+    """Launch an application on the device using the package name on Android, bundle id on iOS."""
     output = launch_app_controller(package_name)
     return Command(
         update={

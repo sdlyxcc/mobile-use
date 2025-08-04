@@ -17,13 +17,17 @@ def tap(
     selector_request: SelectorRequest,
     index: Optional[int] = None,
 ):
+    """
+    Taps on a selector.
+    Index is optional and is used when you have multiple views matching the same selector.
+    """
     output = tap_controller(selector_request=selector_request, index=index)
     return Command(
         update={
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,
-                    content=tap_wrapper.on_success_fn(),
+                    content=tap_wrapper.on_success_fn(selector_request, index),
                     additional_kwargs={"output": output},
                 ),
             ],
@@ -33,6 +37,12 @@ def tap(
 
 tap_wrapper = ToolWrapper(
     tool_fn=tap,
-    on_success_fn=lambda: "Tap is successful.",
-    on_failure_fn=lambda: "Failed to tap.",
+    on_success_fn=(
+        lambda selector_request,
+        index: f"Tap on {selector_request} {"at index {index}" if index else ""} is successful."
+    ),
+    on_failure_fn=(
+        lambda selector_request,
+        index: f"Failed to tap on {selector_request} {"at index {index}" if index else ""}."
+    ),
 )

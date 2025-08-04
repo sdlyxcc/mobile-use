@@ -13,6 +13,9 @@ def open_link(
     tool_call_id: Annotated[str, InjectedToolCallId],
     url: str,
 ):
+    """
+    Open a link on a device (i.e. a deep link).
+    """
     output = open_link_controller(url=url)
     return Command(
         update={

@@ -14,6 +14,9 @@ def swipe(
     tool_call_id: Annotated[str, InjectedToolCallId],
     swipe_request: SwipeRequest,
 ):
+    """
+    Swipes on the screen.
+    """
     output = swipe_controller(swipe_request=swipe_request)
     return Command(
         update={
