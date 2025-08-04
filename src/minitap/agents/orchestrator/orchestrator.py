@@ -38,7 +38,7 @@ async def orchestrator_node(state: State):
     current_subgoal = get_current_subgoal(state.subgoal_plan)
 
     if not current_subgoal:
-        return {"agents_thoughts": ["No subgoal to plan for."]}
+        return {"agents_thoughts": ["No subgoal to go for."]}
 
     device_context = get_device_context()
     system_message = Template(
@@ -60,17 +60,15 @@ async def orchestrator_node(state: State):
 
     if response.status == OrchestratorStatus.CONTINUE:
         state.subgoal_plan = complete_current_subgoal(state.subgoal_plan)
-        thoughts = [f"Subgoal '{str(current_subgoal)}' completed. {response.reason}"]
+        thoughts = [response.reason]
 
         if all_completed(state.subgoal_plan):
-            thoughts.append("All subgoals completed, the goal is achieved.")
+            logger.info("All subgoals completed, the goal is achieved.")
             return {
                 "subgoal_plan": state.subgoal_plan,
                 "agents_thoughts": thoughts,
             }
         state.subgoal_plan = start_next_subgoal(state.subgoal_plan)
-        new_subgoal = get_current_subgoal(state.subgoal_plan)
-        thoughts.append(f"Starting next subgoal '{str(new_subgoal)}'. {response.reason}")
         thoughts.append("==== NEXT SUBGOAL ====")
         return {
             "agents_thoughts": thoughts,
@@ -78,7 +76,7 @@ async def orchestrator_node(state: State):
         }
 
     elif response.status == OrchestratorStatus.REPLAN:
-        thoughts = [f"Subgoal '{str(current_subgoal)}' failed. {response.reason}"]
+        thoughts = [response.reason]
         state.subgoal_plan = fail_current_subgoal(state.subgoal_plan)
         thoughts.append("==== END OF PLAN, REPLANNING ====")
         return {
@@ -86,15 +84,8 @@ async def orchestrator_node(state: State):
             "subgoal_plan": state.subgoal_plan,
         }
 
-    elif response.status == OrchestratorStatus.RESUME:
-        return {
-            "agents_thoughts": [
-                f"Let's continue the current subgoal. {response.reason}",
-            ],
-        }
-
     return {
         "agents_thoughts": [
-            f"Orchestrator Agent completed with {response.status.value}. {response.reason}",
+            response.reason,
         ],
     }
