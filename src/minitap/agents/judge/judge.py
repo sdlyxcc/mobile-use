@@ -5,12 +5,10 @@ from jinja2 import Template
 from langchain_core.messages import HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from minitap.controllers.mobile_command_controller import take_screenshot
 from minitap.graph.state import Subgoal
 from minitap.services.llm import get_llm, with_fallback
-from minitap.tools.maestro import (
-    convert_maestro_screenshot_tool_message_to_human_message,
-    invoke_maestro_tool,
-)
+from minitap.utils.conversations import get_screenshot_message_for_llm
 
 
 class ScreenshotBasedJudgeOutput(BaseModel):
@@ -78,15 +76,8 @@ async def judge(
             judge_output.reason,
             flush=True,
         )
-        tool_message = await invoke_maestro_tool("take_screenshot", device_id)
-        if not tool_message:
-            print("❌ Failed to take screenshot. Could not verify goal.", flush=True)
-            return JudgeOutput(
-                status="NO", reason="Failed to take screenshot to verify subgoal completion."
-            )
-        screenshot_human_message = convert_maestro_screenshot_tool_message_to_human_message(
-            tool_message
-        )
+        screenshot_base64 = take_screenshot()
+        screenshot_human_message = get_screenshot_message_for_llm(screenshot_base64)
         screenshot_verifier_messages.append(screenshot_human_message)
 
         screenshot_verifier_output: ScreenshotBasedJudgeOutput = await with_fallback(
