@@ -16,7 +16,11 @@ def record_interaction(response: BaseMessage):
     logger.info("Recording interaction")
     screenshot_base64 = take_screenshot()
     logger.info("Screenshot taken")
-    compressed_screenshot_base64 = compress_base64_jpeg(screenshot_base64, 20)
+    try:
+        compressed_screenshot_base64 = compress_base64_jpeg(screenshot_base64, 20)
+    except Exception as e:
+        logger.error(f"Error compressing screenshot: {e}")
+        return "Could not record this interaction"
     timestamp = time.time()
     folder = (
         Path(__file__).parent.joinpath(f"../../traces/{get_execution_setup().trace_id}").resolve()
