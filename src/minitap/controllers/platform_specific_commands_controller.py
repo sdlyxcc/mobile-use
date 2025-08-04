@@ -41,7 +41,7 @@ def get_screen_size() -> tuple[int, int]:
     return context.device_width, context.device_height
 
 
-def get_date() -> str:
+def get_device_date() -> str:
     context = get_device_context()
     if context.mobile_platform == "IOS":
         return date.today().strftime("%a %b %d %H:%M:%S %Z %Y")
