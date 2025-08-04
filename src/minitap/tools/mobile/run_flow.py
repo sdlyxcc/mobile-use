@@ -11,6 +11,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def run_flow(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     yaml: str,
     dry_run: bool = False,
 ):
@@ -20,6 +21,7 @@ def run_flow(
     output = run_flow_controller(yaml=yaml, dry_run=dry_run)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

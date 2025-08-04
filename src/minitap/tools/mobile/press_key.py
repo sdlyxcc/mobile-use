@@ -12,12 +12,14 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def press_key(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     key: Key,
 ):
     """Press a key on the device."""
     output = press_key_controller(key)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

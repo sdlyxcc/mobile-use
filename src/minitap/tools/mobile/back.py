@@ -11,11 +11,13 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def back(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
 ):
     """Navigates to the previous screen. (Only works on Android for the moment)"""
     output = back_controller()
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

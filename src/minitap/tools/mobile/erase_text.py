@@ -11,6 +11,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def erase_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
 ):
     """
     Erases up to `count` characters from the currently selected text field (default: 50).
@@ -26,6 +27,7 @@ def erase_text(
     output = erase_text_controller()
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

@@ -11,6 +11,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def paste_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
 ):
     """
     Pastes text previously copied via `copyTextFrom` into the currently focused field.
@@ -26,6 +27,7 @@ def paste_text(
     output = paste_text_controller()
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

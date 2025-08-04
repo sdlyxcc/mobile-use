@@ -13,7 +13,7 @@ logger = get_logger(__name__)
 
 
 def add_agent_thought(a: list[str], b: Union[str, list[str]]) -> list[str]:
-    logger.debug(f"New agent thought: {b}")
+    logger.info(f"New agent thought: {b}")
     if is_execution_setup_set():
         record_interaction(response=AIMessage(content=str(b)))
     if isinstance(b, str):
@@ -21,6 +21,10 @@ def add_agent_thought(a: list[str], b: Union[str, list[str]]) -> list[str]:
     elif isinstance(b, list):
         return a + b
     raise TypeError("b must be a str or list[str]")
+
+
+def take_last(a, b):
+    return b
 
 
 class State(AgentStatePydantic):
@@ -31,15 +35,16 @@ class State(AgentStatePydantic):
     subgoal_plan: Annotated[list[Subgoal], "The current plan, made of subgoals"]
 
     # contextor related keys
-    latest_screenshot_base64: Annotated[Optional[str], "Latest screenshot of the device"]
-    latest_ui_hierarchy: Annotated[Optional[list], "Latest UI hierarchy of the device"]
-    focused_app_info: Annotated[Optional[str], "Focused app info"]
-    device_date: Annotated[Optional[str], "Date of the device"]
+    latest_screenshot_base64: Annotated[Optional[str], "Latest screenshot of the device", take_last]
+    latest_ui_hierarchy: Annotated[Optional[list], "Latest UI hierarchy of the device", take_last]
+    focused_app_info: Annotated[Optional[str], "Focused app info", take_last]
+    device_date: Annotated[Optional[str], "Date of the device", take_last]
 
     # cortex related keys
     structured_decisions: Annotated[
         Optional[str],
         "Structured decisions made by the cortex, for the executor to follow",
+        take_last,
     ]
 
     # common keys

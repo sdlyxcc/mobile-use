@@ -13,6 +13,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def stop_app(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     package_name: Optional[str] = None,
 ):
     """
@@ -22,6 +23,7 @@ def stop_app(
     output = stop_app_controller(package_name=package_name)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

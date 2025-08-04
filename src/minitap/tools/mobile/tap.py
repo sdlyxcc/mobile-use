@@ -14,6 +14,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def tap(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     selector_request: SelectorRequest,
     index: Optional[int] = None,
 ):
@@ -24,6 +25,7 @@ def tap(
     output = tap_controller(selector_request=selector_request, index=index)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

@@ -4,8 +4,9 @@ import sys
 import typer
 from rich.console import Console
 
-from minitap.constants import AVAILABLE_MODELS
 from minitap.clients.adb_client import adb
+from minitap.constants import AVAILABLE_MODELS
+
 
 def validate_model_for_provider(provider: str, model: str) -> None:
     """Validate that the model is available for the given provider."""
@@ -50,4 +51,4 @@ def show_available_models():
 
 
 def run_shell_command_on_host(command: str) -> str:
-    return subprocess.check_output(command, shell=True, text=True)
+    return subprocess.check_output(command, shell=True, text=True, encoding="utf-8")

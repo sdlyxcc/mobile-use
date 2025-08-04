@@ -11,12 +11,14 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def launch_app(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     package_name: str,
 ):
     """Launch an application on the device using the package name on Android, bundle id on iOS."""
     output = launch_app_controller(package_name)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

@@ -16,6 +16,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def wait_for_animation_to_end(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     timeout: Optional[WaitTimeout],
 ):
     """
@@ -32,6 +33,7 @@ def wait_for_animation_to_end(
     output = wait_for_animation_to_end_controller(timeout=timeout)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

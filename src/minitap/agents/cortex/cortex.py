@@ -33,7 +33,6 @@ async def cortex_node(state: State):
         current_subgoal=get_current_subgoal(state.subgoal_plan),
         agents_thoughts=state.agents_thoughts,
     )
-    logger.info("Built system message")
     messages = [
         SystemMessage(content=system_message),
         HumanMessage(
@@ -46,25 +45,20 @@ async def cortex_node(state: State):
             else ""
         ),
     ]
-    logger.info("Built messages")
     for thought in state.agents_thoughts:
         messages.append(AIMessage(content=thought))
-    logger.info("Built thoughts")
 
     if state.latest_screenshot_base64:
         messages.append(get_screenshot_message_for_llm(state.latest_screenshot_base64))
-    logger.info("Built screenshot")
+        logger.info("Added screenshot to context")
 
     if state.latest_ui_hierarchy:
         ui_hierarchy_dict: list[dict] = state.latest_ui_hierarchy
         ui_hierarchy_str = json.dumps(ui_hierarchy_dict, indent=2, ensure_ascii=False)
-        logger.info("Stringified UI hierarchy")
         messages.append(HumanMessage(content="Here is the UI hierarchy:\n" + ui_hierarchy_str))
-    logger.info("Built UI hierarchy")
 
     llm = get_llm(override_provider="openai", override_model="o3")
     llm = llm.with_structured_output(CortexOutput)
-    logger.info("Invoking Cortex LLM...")
     response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
 
     return {

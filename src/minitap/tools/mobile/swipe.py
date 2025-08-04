@@ -12,6 +12,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def swipe(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     swipe_request: SwipeRequest,
 ):
     """
@@ -20,6 +21,7 @@ def swipe(
     output = swipe_controller(swipe_request=swipe_request)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

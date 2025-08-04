@@ -11,6 +11,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def input_text(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     text: str,
 ):
     """
@@ -34,6 +35,7 @@ def input_text(
     output = input_text_controller(text=text)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

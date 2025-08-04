@@ -16,6 +16,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 async def list_packages(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     state: Annotated[State, InjectedState],
 ) -> Command:
     """
@@ -34,6 +35,7 @@ async def list_packages(
         print("Failed to extract insights from data: " + str(e))
         return Command(
             update={
+                "agents_thoughts": [agent_thought],
                 "messages": [
                     ToolMessage(
                         content=list_packages_wrapper.on_failure_fn(),

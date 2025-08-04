@@ -1,7 +1,7 @@
 from enum import Enum
-from typing import Literal, Optional
+from typing import Literal, Optional, Union
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
 
 from minitap.clients.device_hardware_client import get_client as get_device_hardware_client
 from minitap.clients.screen_api_client import get_client as get_screen_api_client
@@ -34,6 +34,7 @@ def take_screenshot():
 
 
 class RunFlowRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     yaml: str
     dry_run: bool = Field(default=False, alias="dryRun")
 
@@ -49,41 +50,64 @@ def run_flow(yaml: str, dry_run: bool = False):
 
 
 class CoordinatesSelectorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     x: int
     y: int
 
 
 class PercentagesSelectorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     """
     0%,0%        # top-left corner
     100%,100%    # bottom-right corner
     50%,50%      # center
     """
 
-    x_percent: int
-    y_percent: int
+    x_percent: float
+    y_percent: float
 
 
-class SelectorRequest(BaseModel):
-    id: Optional[str] = None
-    coordinates: Optional[CoordinatesSelectorRequest] = None
-    percentages: Optional[PercentagesSelectorRequest] = None
-    text: Optional[str] = None
+class IdSelectorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str
+
+
+class TextSelectorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    text: str
+
+
+class SelectorRequestWithCoordinates(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    coordinates: CoordinatesSelectorRequest
+
+
+class SelectorRequestWithPercentages(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    percentages: PercentagesSelectorRequest
+
+
+SelectorRequest = Union[
+    IdSelectorRequest,
+    SelectorRequestWithCoordinates,
+    SelectorRequestWithPercentages,
+    TextSelectorRequest,
+]
 
 
 def format_selector_request_for_yaml(request: SelectorRequest):
-    if not request.id and not request.coordinates and not request.percentages and not request.text:
-        return None
-    yaml = ""
-    if request.id:
-        yaml += f"\n id: {request.id}\n"
-    elif request.coordinates:
-        yaml += f"\n point: {request.coordinates.x},{request.coordinates.y}\n"
-    elif request.percentages:
-        yaml += f"\n point: {request.percentages.x_percent}%,{request.percentages.y_percent}%\n"
-    elif request.text:
-        yaml += f"\n text: {request.text}\n"
-    return yaml
+    if isinstance(request, IdSelectorRequest):
+        return f"\n id: {request.id}\n"
+    elif isinstance(request, SelectorRequestWithCoordinates):
+        return f"\n point: {request.coordinates.x},{request.coordinates.y}\n"
+    elif isinstance(request, SelectorRequestWithPercentages):
+        return f"\n point: {request.percentages.x_percent}%,{request.percentages.y_percent}%\n"
+    elif isinstance(request, TextSelectorRequest):
+        return f"\n text: {request.text}\n"
+    else:
+        error = "Invalid tap selector request, could not format yaml"
+        logger.error(error)
+        raise ControllerErrors(error)
 
 
 def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None):
@@ -92,10 +116,6 @@ def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optiona
     Index is optional and is used when you have multiple views matching the same selector.
     """
     yaml = format_selector_request_for_yaml(selector_request)
-    if not yaml:
-        error = "Invalid tap selector request, could not format yaml"
-        logger.error(error)
-        raise ControllerErrors(error)
     flow_input = f"tapOn:{yaml}"
     if index:
         flow_input += f"\nindex: {index}\n"
@@ -106,10 +126,6 @@ def long_press_on(
     selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None
 ):
     yaml = format_selector_request_for_yaml(selector_request)
-    if not yaml:
-        error = "Invalid long press on selector request, could not format yaml"
-        logger.error(error)
-        raise ControllerErrors(error)
     flow_input = f"longPressOn:{yaml}"
     if index:
         flow_input += f"\nindex: {index}\n"
@@ -117,16 +133,19 @@ def long_press_on(
 
 
 class SwipeStartEndCoordinatesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     start: CoordinatesSelectorRequest
     end: CoordinatesSelectorRequest
 
 
 class SwipeStartEndPercentagesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     start: PercentagesSelectorRequest
     end: PercentagesSelectorRequest
 
 
 class SwipeRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
     start_end_coordinates: Optional[SwipeStartEndCoordinatesRequest] = None
     start_end_percentages: Optional[SwipeStartEndPercentagesRequest] = None
     direction: Optional[Literal["UP", "DOWN", "LEFT", "RIGHT"]] = None
@@ -165,10 +184,6 @@ def input_text(text: str, dry_run: bool = False):
 
 def copy_text_from(selector_request: SelectorRequest, dry_run: bool = False):
     yaml = format_selector_request_for_yaml(selector_request)
-    if not yaml:
-        error = "Invalid copy text from selector request, could not format yaml"
-        logger.error(error)
-        raise ControllerErrors(error)
     return run_flow(f"copyTextFrom:{yaml}\n", dry_run=dry_run)
 
 
@@ -237,7 +252,7 @@ def wait_for_animation_to_end(timeout: Optional[WaitTimeout] = None, dry_run: bo
 
 if __name__ == "__main__":
     launch_app("org.mozilla.firefox")
-    tap(SelectorRequest(text="Search or enter.*"))
+    tap(IdSelectorRequest(id="Search or enter"))
     input_text("tesla model s")
     wait_for_animation_to_end()
     press_key(Key.ENTER)

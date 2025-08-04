@@ -15,6 +15,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def copy_text_from(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     selector_request: SelectorRequest = Field(..., description="The selector to copy text from"),
 ):
     """
@@ -35,6 +36,7 @@ def copy_text_from(
     output = copy_text_from_controller(selector_request=selector_request)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

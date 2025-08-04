@@ -11,6 +11,7 @@ from minitap.tools.tool_wrapper import ToolWrapper
 @tool
 def open_link(
     tool_call_id: Annotated[str, InjectedToolCallId],
+    agent_thought: str,
     url: str,
 ):
     """
@@ -19,6 +20,7 @@ def open_link(
     output = open_link_controller(url=url)
     return Command(
         update={
+            "agents_thoughts": [agent_thought],
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,

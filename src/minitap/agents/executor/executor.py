@@ -44,7 +44,6 @@ async def executor_node(state: State):
     ).bind_tools(
         tools=get_tools_from_wrappers(EXECUTOR_WRAPPERS_TOOLS),
         tool_choice="auto",
-        strict=True,
     )
     response = await llm.ainvoke(messages)
 
