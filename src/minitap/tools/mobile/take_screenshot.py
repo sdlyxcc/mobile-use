@@ -8,6 +8,7 @@ from minitap.controllers.mobile_command_controller import (
     take_screenshot as take_screenshot_controller,
 )
 from minitap.tools.tool_wrapper import ToolWrapper
+from minitap.utils.media import compress_base64_jpeg
 
 
 @tool
@@ -15,13 +16,14 @@ def take_screenshot(
     tool_call_id: Annotated[str, InjectedToolCallId],
 ):
     output = take_screenshot_controller()
+    compressed_image_base64 = compress_base64_jpeg(output)
     return Command(
         update={
+            "latest_screenshot_base64": compressed_image_base64,
             "messages": [
                 ToolMessage(
                     tool_call_id=tool_call_id,
                     content=take_screenshot_wrapper.on_success_fn(),
-                    additional_kwargs={"output": output},
                 ),
             ],
         },
