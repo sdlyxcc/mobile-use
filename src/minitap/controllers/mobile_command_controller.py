@@ -33,7 +33,6 @@ def take_screenshot():
     return get_screen_data().base64
 
 
-###### Interacting with the screen #####
 class RunFlowRequest(BaseModel):
     yaml: str
     dry_run: bool = Field(default=False, alias="dryRun")
@@ -196,6 +195,10 @@ def launch_app(package_name: str, dry_run: bool = False):
 
 def stop_app(package_name: str, dry_run: bool = False):
     return run_flow(f"stopApp: {package_name}\n", dry_run=dry_run)
+
+
+def open_link(url: str, dry_run: bool = False):
+    return run_flow(f"openLink: {url}\n", dry_run=dry_run)
 
 
 ##### Key related commands #####
