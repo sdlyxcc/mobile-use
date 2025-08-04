@@ -75,3 +75,22 @@ def get_device_context() -> DeviceContext:
     if context is None:
         raise ValueError("Device context is not initialized")
     return context
+
+
+# only contains the trace id for now. may contain other things later
+class ExecutionSetup(BaseModel):
+    trace_id: str
+
+
+execution_setup: ContextVar[Optional[ExecutionSetup]] = ContextVar("execution_setup", default=None)
+
+
+def set_execution_setup(trace_id: str):
+    execution_setup.set(ExecutionSetup(trace_id=trace_id))
+
+
+def get_execution_setup() -> ExecutionSetup:
+    context = execution_setup.get()
+    if context is None:
+        raise ValueError("Execution setup is not initialized")
+    return context
