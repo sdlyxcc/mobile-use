@@ -43,7 +43,12 @@ def run_flow(yaml: str, dry_run: bool = False):
     logger.info(f"Running flow: {yaml}")
     payload = RunFlowRequest(yaml=yaml, dryRun=dry_run).model_dump(by_alias=True)
     response = device_hardware_api.post("run-command", json=payload)
-    logger.info("Status code: " + str(response.status_code))
+
+    if response.status_code == 200:
+        logger.success("Tool call completed")
+    else:
+        logger.error(f"Tool call failed with status code: {response.status_code}")
+
     json_response = response.json()
     if isinstance(json_response, dict):
         json_response = {k: v for k, v in json_response.items() if v is not None}
