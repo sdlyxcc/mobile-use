@@ -91,15 +91,15 @@ async def run_automation(
 
     if test_name:
         traces_output_path = Path(traces_output_path_str).resolve()
-        print(f"📂 Traces output path: {traces_output_path}")
+        logger.info(f"📂 Traces output path: {traces_output_path}")
         traces_temp_path = Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
-        print(f"📄📂 Traces temp path: {traces_temp_path}")
+        logger.info(f"📄📂 Traces temp path: {traces_temp_path}")
         traces_output_path.mkdir(parents=True, exist_ok=True)
         traces_temp_path.mkdir(parents=True, exist_ok=True)
         trace_id = test_name
         set_execution_setup(trace_id)
 
-    print(f"Starting graph with goal: {goal}", flush=True)
+    logger.info(f"Starting graph with goal: `{goal}`")
     graph_input = State(
         messages=[],
         initial_goal=goal,
@@ -110,11 +110,12 @@ async def run_automation(
         device_date=None,
         structured_decisions=None,
         agents_thoughts=[],
+        remaining_steps=RECURSION_LIMIT,
     ).model_dump()
 
     success = False
     try:
-        print(f"Invoking graph with input: {graph_input}", flush=True)
+        logger.info(f"Invoking graph with input: {graph_input}")
         result = await (await get_graph()).ainvoke(
             input=graph_input,
             config={
@@ -125,10 +126,10 @@ async def run_automation(
 
         print_ai_response_to_stderr(graph_result=result)
 
-        print("✅ Test is success ✅")
+        logger.info("✅ Test is success ✅")
         success = True
     except Exception as e:
-        print(f"❌ Test failed with error: {e} ❌")
+        logger.info(f"❌ Test failed with error: {e} ❌")
         raise
     finally:
         if traces_temp_path and traces_output_path and start_time:
@@ -136,18 +137,18 @@ async def run_automation(
             status = "_PASS" if success else "_FAIL"
             new_name = f"{test_name}{status}_{formatted_ts}"
 
-            print("Compiling trace FROM FOLDER: " + str(traces_temp_path))
+            logger.info("Compiling trace FROM FOLDER: " + str(traces_temp_path))
             create_gif_from_trace_folder(traces_temp_path)
             create_steps_json_from_trace_folder(traces_temp_path)
 
-            print("Video created, removing dust...")
+            logger.info("Video created, removing dust...")
             remove_images_from_trace_folder(traces_temp_path)
             remove_steps_json_from_trace_folder(traces_temp_path)
-            print("📽️ Trace compiled, moving to output path 📽️")
+            logger.info("📽️ Trace compiled, moving to output path 📽️")
 
             # moving all the content that is inside the traces folder into the new path
             output_folder_path = traces_temp_path.rename(traces_output_path / new_name)
-            print(f"📂✅ Trace folder renamed to: {output_folder_path.name}")
+            logger.info(f"📂✅ Trace folder renamed to: {output_folder_path.name}")
 
         await asyncio.sleep(1)
 
