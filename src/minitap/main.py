@@ -18,7 +18,7 @@ from minitap.constants import (
     DEFAULT_PROVIDER,
     RECURSION_LIMIT,
 )
-from minitap.context import DeviceContext
+from minitap.context import DeviceContext, set_execution_setup
 from minitap.controllers.mobile_command_controller import ScreenDataResponse, get_screen_data
 from minitap.controllers.platform_specific_commands_controller import get_first_device_id
 from minitap.graph.graph import get_graph
@@ -97,19 +97,19 @@ async def run_automation(
         traces_output_path.mkdir(parents=True, exist_ok=True)
         traces_temp_path.mkdir(parents=True, exist_ok=True)
         trace_id = test_name
+        set_execution_setup(trace_id)
 
     print(f"Starting graph with goal: {goal}", flush=True)
     graph_input = State(
-        initial_goal=goal,
-        remaining_steps=RECURSION_LIMIT,
         messages=[],
-        is_goal_achieved=False,
-        device_id=device_id,
+        initial_goal=goal,
+        subgoal_plan=[],
         latest_ui_hierarchy=None,
-        trace_id=trace_id,
-        current_subgoal=None,
-        subgoal_history=[],
-        memory=None,
+        latest_screenshot_base64=None,
+        focused_app_info=None,
+        device_date=None,
+        structured_decisions=None,
+        agents_thoughts=[],
     ).model_dump()
 
     success = False

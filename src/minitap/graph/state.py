@@ -46,5 +46,3 @@ class State(AgentStatePydantic):
         "All thoughts and reasons that led to actions (why a tool was called, expected outcomes..)",
         add_agent_thought,
     ]
-    # extra keys
-    trace_id: Annotated[str | None, "ID of the run"]
