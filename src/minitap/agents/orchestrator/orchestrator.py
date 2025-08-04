@@ -29,6 +29,7 @@ logger = get_logger(__name__)
 async def orchestrator_node(state: State):
     if nothing_started(state.subgoal_plan):
         state.subgoal_plan = start_next_subgoal(state.subgoal_plan)
+        logger.info("No subgoal started yet, starting the first one.")
         return {
             "agents_thoughts": ["No subgoal started yet, starting the first one."],
             "subgoal_plan": state.subgoal_plan,

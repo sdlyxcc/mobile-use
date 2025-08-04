@@ -24,6 +24,7 @@ class Subgoal(BaseModel):
     status: SubgoalStatus
 
     def __str__(self):
+        status_emoji = "❓"
         match self.status:
             case SubgoalStatus.SUCCESS:
                 status_emoji = "✅"

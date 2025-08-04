@@ -2,15 +2,15 @@ from minitap.agents.planner.types import Subgoal, SubgoalStatus
 
 
 def get_current_subgoal(subgoals: list[Subgoal]) -> Subgoal | None:
-    return next((s for s in subgoals if s.status == SubgoalStatus.PENDING), None)
+    return next((s for s in subgoals if s.status.value == SubgoalStatus.PENDING.value), None)
 
 
 def get_next_subgoal(subgoals: list[Subgoal]) -> Subgoal | None:
-    return next((s for s in subgoals if s.status == SubgoalStatus.NOT_STARTED), None)
+    return next((s for s in subgoals if s.status.value == SubgoalStatus.NOT_STARTED.value), None)
 
 
 def nothing_started(subgoals: list[Subgoal]) -> bool:
-    return all(s.status == SubgoalStatus.NOT_STARTED for s in subgoals)
+    return all(s.status.value == SubgoalStatus.NOT_STARTED.value for s in subgoals)
 
 
 def complete_current_subgoal(subgoals: list[Subgoal]) -> list[Subgoal]:
@@ -30,11 +30,11 @@ def fail_current_subgoal(subgoals: list[Subgoal]) -> list[Subgoal]:
 
 
 def all_completed(subgoals: list[Subgoal]) -> bool:
-    return all(s.status == SubgoalStatus.SUCCESS for s in subgoals)
+    return all(s.status.value == SubgoalStatus.SUCCESS.value for s in subgoals)
 
 
 def one_of_them_is_failure(subgoals: list[Subgoal]) -> bool:
-    return any(s.status == SubgoalStatus.FAILURE for s in subgoals)
+    return any(s.status.value == SubgoalStatus.FAILURE.value for s in subgoals)
 
 
 def start_next_subgoal(subgoals: list[Subgoal]) -> list[Subgoal]:
