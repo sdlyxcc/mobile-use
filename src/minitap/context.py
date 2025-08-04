@@ -89,6 +89,10 @@ def set_execution_setup(trace_id: str):
     execution_setup.set(ExecutionSetup(trace_id=trace_id))
 
 
+def is_execution_setup_set() -> bool:
+    return execution_setup.get() is not None
+
+
 def get_execution_setup() -> ExecutionSetup:
     context = execution_setup.get()
     if context is None:

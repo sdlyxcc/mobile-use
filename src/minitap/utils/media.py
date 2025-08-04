@@ -7,6 +7,9 @@ from PIL import Image
 
 
 def compress_base64_jpeg(base64_str: str, quality: int = 50) -> str:
+    if base64_str.startswith("data:image"):
+        base64_str = base64_str.split(",")[1]
+
     image_data = base64.b64decode(base64_str)
     image = Image.open(BytesIO(image_data))
 

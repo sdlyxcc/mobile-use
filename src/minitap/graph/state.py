@@ -5,6 +5,7 @@ from langgraph.prebuilt.chat_agent_executor import AgentStatePydantic
 from typing_extensions import Annotated, Optional
 
 from minitap.agents.planner.types import Subgoal
+from minitap.context import is_execution_setup_set
 from minitap.utils.logger import get_logger
 from minitap.utils.recorder import record_interaction
 
@@ -13,7 +14,8 @@ logger = get_logger(__name__)
 
 def add_agent_thought(a: list[str], b: Union[str, list[str]]) -> list[str]:
     logger.debug(f"New agent thought: {b}")
-    record_interaction(response=AIMessage(content=str(b)))
+    if is_execution_setup_set():
+        record_interaction(response=AIMessage(content=str(b)))
     if isinstance(b, str):
         return a + [b]
     elif isinstance(b, list):

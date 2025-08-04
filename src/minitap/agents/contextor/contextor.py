@@ -15,7 +15,9 @@ logger = get_logger(__name__)
     on_failure=lambda _: logger.info("Contextor Agent ❌", flush=True),
 )
 def contextor_node():
+    logger.info("Retrieving screen data")
     device_data = get_screen_data()
+    logger.info("Screen data retrieved")
     focused_app_info = get_focused_app_info()
     device_date = get_device_date()
 

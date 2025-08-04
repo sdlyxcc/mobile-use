@@ -6,11 +6,16 @@ from langchain_core.messages import BaseMessage
 
 from minitap.context import get_execution_setup
 from minitap.controllers.mobile_command_controller import take_screenshot
+from minitap.utils.logger import get_logger
 from minitap.utils.media import compress_base64_jpeg
+
+logger = get_logger(__name__)
 
 
 def record_interaction(response: BaseMessage):
+    logger.info("Recording interaction")
     screenshot_base64 = take_screenshot()
+    logger.info("Screenshot taken")
     compressed_screenshot_base64 = compress_base64_jpeg(screenshot_base64, 20)
     timestamp = time.time()
     folder = (
@@ -30,5 +35,5 @@ def record_interaction(response: BaseMessage):
         ) as f:
             f.write(response.model_dump_json())
     except Exception as e:
-        print(f"Error recording interaction: {e}")
+        logger.error(f"Error recording interaction: {e}")
     return "Screenshot recorded successfully"

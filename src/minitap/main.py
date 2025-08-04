@@ -73,7 +73,9 @@ async def run_automation(
     logger.info(f"Model provider selected: {settings.LLM_PROVIDER}")
     logger.info(f"Model selected: {settings.LLM_MODEL}")
 
+    logger.info("Retrieving screen data")
     screen_data: ScreenDataResponse = get_screen_data()
+    logger.info("Screen data retrieved")
     device_context_instance = DeviceContext(
         host_platform="WINDOWS" if host_platform == "Windows" else "LINUX",
         mobile_platform="ANDROID" if screen_data.platform == "ANDROID" else "IOS",
