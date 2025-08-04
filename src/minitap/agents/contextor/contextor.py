@@ -10,9 +10,9 @@ logger = get_logger(__name__)
 
 
 @wrap_with_callbacks(
-    before=lambda: logger.info("Starting Contextor Agent...", end="", flush=True),
-    on_success=lambda _: logger.info("Contextor Agent ✅", flush=True),
-    on_failure=lambda _: logger.info("Contextor Agent ❌", flush=True),
+    before=lambda: logger.info("Starting Contextor Agent"),
+    on_success=lambda _: logger.info("Contextor Agent ✅"),
+    on_failure=lambda _: logger.info("Contextor Agent ❌"),
 )
 def contextor_node():
     logger.info("Retrieving screen data")

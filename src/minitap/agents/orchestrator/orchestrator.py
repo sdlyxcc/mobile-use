@@ -22,9 +22,9 @@ logger = get_logger(__name__)
 
 
 @wrap_with_callbacks(
-    before=lambda: logger.info("Starting Orchestrator Agent...", end="", flush=True),
-    on_success=lambda _: logger.info("Orchestrator Agent ✅", flush=True),
-    on_failure=lambda _: logger.info("Orchestrator Agent ❌", flush=True),
+    before=lambda: logger.info("Starting Orchestrator Agent..."),
+    on_success=lambda _: logger.info("Orchestrator Agent ✅"),
+    on_failure=lambda _: logger.info("Orchestrator Agent ❌"),
 )
 async def orchestrator_node(state: State):
     if nothing_started(state.subgoal_plan):

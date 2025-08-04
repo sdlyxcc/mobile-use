@@ -15,9 +15,9 @@ class SpectronOutput(BaseModel):
 
 
 @wrap_with_callbacks(
-    before=lambda: print("👁️📱 Analyzing UI...", end="", flush=True),
-    on_success=lambda _: print("✅", flush=True),
-    on_failure=lambda _: print("❌", flush=True),
+    before=lambda: print("👁️📱 Analyzing UI..."),
+    on_success=lambda _: print("✅"),
+    on_failure=lambda _: print("❌"),
 )
 async def spectron(
     ui_hierarchy: str,

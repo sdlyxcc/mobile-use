@@ -15,9 +15,9 @@ logger = get_logger(__name__)
 
 
 @wrap_with_callbacks(
-    before=lambda: logger.info("Starting Planner Agent...", end="", flush=True),
-    on_success=lambda _: logger.info("Planner Agent ✅", flush=True),
-    on_failure=lambda _: logger.info("Planner Agent ❌", flush=True),
+    before=lambda: logger.info("Starting Planner Agent..."),
+    on_success=lambda _: logger.info("Planner Agent ✅"),
+    on_failure=lambda _: logger.info("Planner Agent ❌"),
 )
 async def planner_node(state: State):
     device_context = get_device_context()

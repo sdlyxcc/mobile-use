@@ -14,9 +14,9 @@ logger = get_logger(__name__)
 
 
 @wrap_with_callbacks(
-    before=lambda: logger.info("Starting Executor Agent...", end="", flush=True),
-    on_success=lambda _: logger.info("Executor Agent ✅", flush=True),
-    on_failure=lambda _: logger.info("Executor Agent ❌", flush=True),
+    before=lambda: logger.info("Starting Executor Agent..."),
+    on_success=lambda _: logger.info("Executor Agent ✅"),
+    on_failure=lambda _: logger.info("Executor Agent ❌"),
 )
 async def executor_node(state: State):
     structured_decisions = state.structured_decisions
