@@ -24,7 +24,9 @@ async def planner_node(state: State):
 
     needs_replan = one_of_them_is_failure(state.subgoal_plan)
 
-    system_message = Template(Path(__file__).parent.joinpath("planner.md").read_text()).render(
+    system_message = Template(
+        Path(__file__).parent.joinpath("planner.md").read_text(encoding="utf-8")
+    ).render(
         platform=device_context.mobile_platform,
         action="replan" if needs_replan else "plan",
         initial_goal=state.initial_goal,

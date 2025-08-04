@@ -32,7 +32,7 @@ class State(AgentStatePydantic):
 
     # contextor related keys
     latest_screenshot_base64: Annotated[Optional[str], "Latest screenshot of the device"]
-    latest_ui_hierarchy: Annotated[Optional[str], "Latest UI hierarchy of the device"]
+    latest_ui_hierarchy: Annotated[Optional[list], "Latest UI hierarchy of the device"]
     focused_app_info: Annotated[Optional[str], "Focused app info"]
     device_date: Annotated[Optional[str], "Date of the device"]
 

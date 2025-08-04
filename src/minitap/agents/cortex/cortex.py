@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 
 from jinja2 import Template
@@ -23,13 +24,16 @@ logger = get_logger(__name__)
 async def cortex_node(state: State):
     device_context = get_device_context()
 
-    system_message = Template(Path(__file__).parent.joinpath("cortex.md").read_text()).render(
+    system_message = Template(
+        Path(__file__).parent.joinpath("cortex.md").read_text(encoding="utf-8")
+    ).render(
         platform=device_context.mobile_platform,
         initial_goal=state.initial_goal,
         subgoal_plan=state.subgoal_plan,
         current_subgoal=get_current_subgoal(state.subgoal_plan),
         agents_thoughts=state.agents_thoughts,
     )
+    logger.info("Built system message")
     messages = [
         SystemMessage(content=system_message),
         HumanMessage(
@@ -42,24 +46,30 @@ async def cortex_node(state: State):
             else ""
         ),
     ]
+    logger.info("Built messages")
     for thought in state.agents_thoughts:
         messages.append(AIMessage(content=thought))
+    logger.info("Built thoughts")
 
     if state.latest_screenshot_base64:
         messages.append(get_screenshot_message_for_llm(state.latest_screenshot_base64))
+    logger.info("Built screenshot")
 
     if state.latest_ui_hierarchy:
-        messages.append(
-            HumanMessage(content="Here is the UI hierarchy:\n" + state.latest_ui_hierarchy)
-        )
+        ui_hierarchy_dict: list[dict] = state.latest_ui_hierarchy
+        ui_hierarchy_str = json.dumps(ui_hierarchy_dict, indent=2, ensure_ascii=False)
+        logger.info("Stringified UI hierarchy")
+        messages.append(HumanMessage(content="Here is the UI hierarchy:\n" + ui_hierarchy_str))
+    logger.info("Built UI hierarchy")
 
-    llm = get_llm(override_provider="openai", override_model="o3", override_temperature=0.2)
+    llm = get_llm(override_provider="openai", override_model="o3")
     llm = llm.with_structured_output(CortexOutput)
+    logger.info("Invoking Cortex LLM...")
     response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
 
     return {
-        "agent_thought": [response.agent_thought],
-        "structured_decisions": response.decisions if response.complete_current_subgoal else None,
+        "agents_thoughts": [response.agent_thought],
+        "structured_decisions": None if response.complete_current_subgoal else response.decisions,
         "latest_screenshot_base64": None,
         "latest_ui_hierarchy": None,
         "focused_app_info": None,

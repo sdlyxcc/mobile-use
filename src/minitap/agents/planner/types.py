@@ -42,6 +42,3 @@ class Subgoal(BaseModel):
 
     def __repr__(self):
         return str(self)
-
-    class Config:
-        use_enum_values = True

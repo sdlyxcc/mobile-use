@@ -32,7 +32,9 @@ async def judge(
     ui_hierarchy: str,
 ) -> JudgeOutput:
     print("Starting Judge Agent", flush=True)
-    judge_system_message = Template(Path(__file__).parent.joinpath("judge.md").read_text()).render(
+    judge_system_message = Template(
+        Path(__file__).parent.joinpath("judge.md").read_text(encoding="utf-8")
+    ).render(
         subgoal=subgoal,
         subgoal_history=subgoal_history,
     )
@@ -42,7 +44,7 @@ async def judge(
     ]
 
     screenshot_verifier_system_message = Template(
-        Path(__file__).parent.joinpath("screenshot_based_judge.md").read_text()
+        Path(__file__).parent.joinpath("screenshot_based_judge.md").read_text(encoding="utf-8")
     ).render(
         subgoal=subgoal,
         subgoal_history=subgoal_history,

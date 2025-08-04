@@ -55,11 +55,11 @@ To justify your conclusion, you will fill in the `agent_thought` field based on:
 
 #### Current Subgoal:
 
-> “Search for Alice in WhatsApp”
+> "Search for Alice in WhatsApp"
 
 #### Structured Decisions:
 
-```
+```text
 "{\"action\": \"tap\", \"target\": {\"resource_id\": \"com.whatsapp:id/menuitem_search\", \"text\": \"Search\"}}"
 ```
 

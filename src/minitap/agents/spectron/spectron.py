@@ -26,7 +26,7 @@ async def spectron(
     screenshot_message: Optional[HumanMessage] = None,
 ) -> SpectronOutput:
     spectron_system_message = Template(
-        Path(__file__).parent.joinpath("spectron.md").read_text()
+        Path(__file__).parent.joinpath("spectron.md").read_text(encoding="utf-8")
     ).render(
         current_subgoal=current_subgoal,
         initial_goal=initial_goal,

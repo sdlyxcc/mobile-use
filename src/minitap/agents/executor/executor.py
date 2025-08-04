@@ -27,7 +27,9 @@ async def executor_node(state: State):
         }
     device_context = get_device_context()
 
-    system_message = Template(Path(__file__).parent.joinpath("executor.md").read_text()).render(
+    system_message = Template(
+        Path(__file__).parent.joinpath("executor.md").read_text(encoding="utf-8")
+    ).render(
         platform=device_context.mobile_platform,
     )
     last_thought = state.agents_thoughts[-1]

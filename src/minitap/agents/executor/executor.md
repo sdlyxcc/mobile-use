@@ -21,7 +21,7 @@ Given the `structured_decisions` (a stringified object) from the **Cortex** agen
 
 **Structured Decisions from the **Cortex** agent**:
 
-"I’m tapping on the chat item labeled 'Alice' to open the conversation."
+"I'm tapping on the chat item labeled 'Alice' to open the conversation."
 
 ```json
 {
@@ -39,7 +39,7 @@ Call the `tap_on_element` tool with:
 
 - `resource_id = "com.whatsapp:id/conversation_item"`
 - `text = "Alice"`
-- `agent_thought = "I’m tapping on the chat item labeled 'Alice' to open the conversation."`
+- `agent_thought = "I'm tapping on the chat item labeled 'Alice' to open the conversation."`
 
 ---
 
@@ -48,11 +48,11 @@ Call the `tap_on_element` tool with:
 - Tools may include actions like: `tap`, `swipe`, `start_app`, `stop_app`, `list_packages`, `get_current_focus`, etc.
 - You **must not hardcode tool definitions** here.
 - Just use the right tool based on what the `structured_decisions` requires.
-- The tools are provided dynamically via LangGraph’s tool binding mechanism.
+- The tools are provided dynamically via LangGraph's tool binding mechanism.
 
 ### 🔁 Final Notes
 
-- **You do not need to reason or decide strategy** — that's the Cortex’s job.
+- **You do not need to reason or decide strategy** — that's the Cortex's job.
 - You simply interpret and execute — like hands following the brain.
 - The `agent_thought` must always clearly reflect _why_ the action is being performed.
 - Be precise. Avoid vague or generic `agent_thought`s.

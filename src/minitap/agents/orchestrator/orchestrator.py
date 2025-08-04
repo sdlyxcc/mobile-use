@@ -41,7 +41,9 @@ async def orchestrator_node(state: State):
         return {"agents_thoughts": ["No subgoal to plan for."]}
 
     device_context = get_device_context()
-    system_message = Template(Path(__file__).parent.joinpath("orchestrator.md").read_text()).render(
+    system_message = Template(
+        Path(__file__).parent.joinpath("orchestrator.md").read_text(encoding="utf-8")
+    ).render(
         platform=device_context.mobile_platform,
         initial_goal=state.initial_goal,
         subgoal_plan="\n".join(str(s) for s in state.subgoal_plan),

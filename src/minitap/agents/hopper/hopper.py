@@ -24,7 +24,9 @@ async def hopper(
     data: str,
 ) -> HopperOutput:
     print("Starting Hopper Agent", flush=True)
-    system_message = Template(Path(__file__).parent.joinpath("hopper.md").read_text()).render(
+    system_message = Template(
+        Path(__file__).parent.joinpath("hopper.md").read_text(encoding="utf-8")
+    ).render(
         initial_goal=initial_goal,
         messages=messages,
     )

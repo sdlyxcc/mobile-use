@@ -3,6 +3,7 @@ from minitap.controllers.platform_specific_commands_controller import (
     get_device_date,
     get_focused_app_info,
 )
+from minitap.graph.state import State
 from minitap.utils.decorators import wrap_with_callbacks
 from minitap.utils.logger import get_logger
 
@@ -14,7 +15,7 @@ logger = get_logger(__name__)
     on_success=lambda _: logger.info("Contextor Agent ✅"),
     on_failure=lambda _: logger.info("Contextor Agent ❌"),
 )
-def contextor_node():
+def contextor_node(_: State):
     logger.info("Retrieving screen data")
     device_data = get_screen_data()
     logger.info("Screen data retrieved")
