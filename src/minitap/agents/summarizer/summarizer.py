@@ -8,7 +8,7 @@ from minitap.constants import MAX_MESSAGES_IN_HISTORY
 from minitap.graph.state import State
 
 
-def summarizer(state: State):
+def summarizer_node(state: State):
     if len(state.messages) <= MAX_MESSAGES_IN_HISTORY:
         return {}
 
