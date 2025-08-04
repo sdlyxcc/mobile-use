@@ -63,7 +63,7 @@ def post_executor_gate(
     if isinstance(last_message, AIMessage):
         tool_calls = getattr(last_message, "tool_calls", None)
         if tool_calls and len(tool_calls) > 0:
-            logger.info("🔨👁️ Found tool calls: " + str(tool_calls))
+            logger.info("🔨👁️  Found tool calls: " + str(tool_calls))
             return "invoke_tools"
         else:
             logger.info("🔨❌ No tool calls found")

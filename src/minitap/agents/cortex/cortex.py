@@ -18,8 +18,8 @@ logger = get_logger(__name__)
 
 @wrap_with_callbacks(
     before=lambda: logger.info("Starting Cortex Agent..."),
-    on_success=lambda _: logger.info("Cortex Agent ✅"),
-    on_failure=lambda _: logger.info("Cortex Agent ❌"),
+    on_success=lambda _: logger.success("Cortex Agent"),
+    on_failure=lambda _: logger.error("Cortex Agent"),
 )
 async def cortex_node(state: State):
     device_context = get_device_context()
