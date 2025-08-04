@@ -108,7 +108,6 @@ async def get_graph() -> CompiledStateGraph:
             "end_subgoal": "orchestrator",
         },
     )
-    graph_builder.add_edge("cortex", "executor")
     graph_builder.add_conditional_edges(
         "executor",
         post_executor_gate,
