@@ -45,7 +45,8 @@ def run_flow(yaml: str, dry_run: bool = False):
     response = device_hardware_api.post("run-command", json=payload)
     logger.info("Status code: " + str(response.status_code))
     json_response = response.json()
-    json_response = {k: v for k, v in json_response.items() if v is not None}
+    if isinstance(json_response, dict):
+        json_response = {k: v for k, v in json_response.items() if v is not None}
     return json_response
 
 
