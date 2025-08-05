@@ -29,17 +29,53 @@ First off, thank you for considering contributing to MiniTap! Your help is great
 
 Once your changes are ready, push your branch to your fork and open a Pull Request against the `main` branch of the original repository. Provide a clear description of the changes you've made.
 
+Yes — absolutely. What you have is based on a classic `pip-tools` or `poetry` workflow, but **it doesn't match how `uv` actually works**, and yes — you can **simplify it a lot** while still being precise.
+
 ## Dependency Management
 
-If you need to add a new package:
+We use [`uv`](https://github.com/astral-sh/uv) for dependency management and locking.
 
-1.  **Add to `pyproject.toml`**: Add the package to the `dependencies` list (for the main project) or the `[project.optional-dependencies].dev` list (for development tools).
-2.  **Update the Lock File**: Regenerate the `requirements.txt` file to lock the new set of dependencies. This ensures everyone uses the same versions.
-    ```bash
-    uv pip compile pyproject.toml -o requirements.txt
-    ```
-3.  **Commit Both Files**: Commit the changes to both `pyproject.toml` and the updated `requirements.txt`.
-4.  **Update Your Environment**: Run the install command again to ensure your local environment reflects the changes.
-    ```bash
-    uv pip install -e ".[dev]"
-    ```
+### 🔄 Installing dependencies
+
+To install all project dependencies from the lockfile:
+
+```bash
+uv sync
+```
+
+````
+
+This ensures a consistent environment across all machines.
+
+---
+
+### ➕ Adding a new package
+
+To add a new package (dev or prod):
+
+```bash
+uv pip install <package-name>
+uv lock
+```
+
+Then commit the updated `uv.lock`.
+
+If the package is used only in development, add the `--extra=dev` flag:
+
+```bash
+uv pip install <package-name> --extra=dev
+uv lock
+```
+
+---
+
+### ✅ Keeping things in sync
+
+If you update dependencies manually (or pull a new lockfile):
+
+```bash
+uv sync
+```
+
+That's it.
+````
