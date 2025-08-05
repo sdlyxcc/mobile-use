@@ -4,25 +4,12 @@ from typing import Awaitable, Callable, Optional, TypeVar
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
-from minitap.config import settings
-from minitap.constants import AVAILABLE_MODELS, DEFAULT_MODEL, DEFAULT_PROVIDER
+from minitap.config import LLM, AgentNode, settings
 from minitap.context import (
-    LLMModel,
-    LLMProvider,
-    get_llm_context,
+    get_llm_config_context,
 )
 
 logger = logging.getLogger(__name__)
-
-
-def validate_model_for_provider(provider: LLMProvider, model: LLMModel) -> bool:
-    if provider == AVAILABLE_MODELS["openrouter"] and model not in AVAILABLE_MODELS[provider]:
-        logger.warning(
-            f"Model '{model}' is not valid for provider '{provider}'. "
-            f"Available models: {AVAILABLE_MODELS[provider]}"
-        )
-        return False
-    return model != ""
 
 
 def get_google_llm(
@@ -76,48 +63,29 @@ def get_grok_llm(model_name: str, temperature: float = 1) -> ChatOpenAI:
 
 
 def get_llm(
-    override_provider: Optional[LLMProvider] = None,
-    override_model: Optional[str] = None,
-    override_temperature: float = 1,
+    agent_node: Optional[AgentNode] = None,
+    override_llm: Optional[LLM] = None,
+    temperature: float = 1,
 ):
-    """Get LLM instance using provider/model from context, environment variables, or defaults.
+    if agent_node is None and override_llm is None:
+        raise ValueError("Either agent_node or override_llm must be provided")
+    llm: LLM | None = override_llm
+    if not llm:
+        if agent_node is None:
+            raise ValueError("Agent node must be provided")
+        llm_config = get_llm_config_context().llm_config
+        llm = llm_config[agent_node]
 
-    This is the single entry point for LLM selection. It automatically:
-    1. Checks ContextVar for provider/model (set by CLI or programmatically)
-    2. Falls back to environment variables if available
-    3. Uses hardcoded defaults as final fallback
-    """
-
-    if override_provider and override_model:
-        return _create_llm(override_provider, override_model, override_temperature)
-
-    context_provider, context_model = get_llm_context()
-    if context_provider and context_model:
-        return _create_llm(context_provider, context_model, override_temperature)
-
-    logger.warning("LLM provider or model not found in context. Checking environment variables...")
-    if settings.LLM_PROVIDER and settings.LLM_MODEL:
-        return _create_llm(settings.LLM_PROVIDER, settings.LLM_MODEL, override_temperature)
-
-    logger.warning(
-        "LLM provider or model not found in environment variables."
-        "Falling back to {DEFAULT_PROVIDER}/{DEFAULT_MODEL}"
-    )
-    return _create_llm(DEFAULT_PROVIDER, DEFAULT_MODEL, override_temperature)
-
-
-def _create_llm(provider: LLMProvider, model_name: str, temperature: float = 1):
-    """Internal function to create LLM instances."""
-    if provider == "openai":
-        return get_openai_llm(model_name, temperature)
-    elif provider == "google":
-        return get_google_llm(model_name, temperature)
-    elif provider == "openrouter":
-        return get_openrouter_llm(model_name, temperature)
-    elif provider == "xai":
-        return get_grok_llm(model_name, temperature)
+    if llm.provider == "openai":
+        return get_openai_llm(llm.model, temperature)
+    elif llm.provider == "google":
+        return get_google_llm(llm.model, temperature)
+    elif llm.provider == "openrouter":
+        return get_openrouter_llm(llm.model, temperature)
+    elif llm.provider == "xai":
+        return get_grok_llm(llm.model, temperature)
     else:
-        raise ValueError(f"Unsupported provider: {provider}")
+        raise ValueError(f"Unsupported provider: {llm.provider}")
 
 
 T = TypeVar("T")

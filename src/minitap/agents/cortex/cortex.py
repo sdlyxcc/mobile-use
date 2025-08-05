@@ -57,7 +57,7 @@ async def cortex_node(state: State):
         ui_hierarchy_str = json.dumps(ui_hierarchy_dict, indent=2, ensure_ascii=False)
         messages.append(HumanMessage(content="Here is the UI hierarchy:\n" + ui_hierarchy_str))
 
-    llm = get_llm(override_provider="openai", override_model="o3")
+    llm = get_llm(agent_node="cortex")
     llm = llm.with_structured_output(CortexOutput)
     response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
 
