@@ -3,3 +3,6 @@ __pycache__
 **/minitap.egg-info
 .vscode/settings.json
 .venv/
+
+# User config
+llm.override.jsonc

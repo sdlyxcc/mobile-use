@@ -22,24 +22,18 @@ uv pip install -e ".[dev]"
 uv pip install -e .
 ```
 
-### 3. **Set the environment variables**
+### 3. **Set the environment variables, configure LLMs**
 
-Fill the `.env` file by following the `.env.example` template.
+Copy `.env.example` to `.env` and fill in your API keys.
 
-You can use any supported model from the following providers:
+To run the project out-of-the-box, you only need to specify an **OpenAI API key**.
+To customize the models used by each agent, copy and edit:
 
-- **OpenAI** — e.g., `o3` (recommended)
-- **Google** — e.g., `gemini-2.5-pro` (recommended)
-- **XAI** — e.g., `grok-4` (recommended)
-- **OpenRouter:**
-  > You can choose from many advanced models like:
-  >
-  > - `moonshotai/kimi-k2`
-  > - `meta-llama/llama-4-maverick`
-  > - `meta-llama/llama-4-scout`
-  >
-  > However, the models available to you depend on what you've **enabled in your [OpenRouter dashboard](https://openrouter.ai/)**.
-  > Make sure to activate any models you want to use before running the project.
+```bash
+cp llm.override.template.json llm.override.json
+```
+
+Make sure to provide the relevant API key for the provider you want to use.
 
 ### 4. **Run the project**
 
