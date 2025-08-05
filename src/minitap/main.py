@@ -6,16 +6,12 @@ from pathlib import Path
 from typing import Any, Optional
 
 import typer
-from click import Choice
 from langchain_core.messages import AIMessage
 from rich.console import Console
 from typing_extensions import Annotated
 
-from minitap.config import settings
+from minitap.config import initialize_llm_config
 from minitap.constants import (
-    AVAILABLE_MODELS,
-    DEFAULT_MODEL,
-    DEFAULT_PROVIDER,
     RECURSION_LIMIT,
 )
 from minitap.context import DeviceContext, set_execution_setup
@@ -24,8 +20,7 @@ from minitap.controllers.platform_specific_commands_controller import get_first_
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.servers.utils import are_ports_available
-from minitap.utils.cli_helpers import display_device_status, validate_model_for_provider
-from minitap.utils.cli_selection import display_llm_config, select_provider_and_model
+from minitap.utils.cli_helpers import display_device_status
 from minitap.utils.logger import get_logger
 from minitap.utils.media import (
     create_gif_from_trace_folder,
@@ -70,12 +65,11 @@ async def run_automation(
 
     host_platform = platform.system()
 
-    logger.info(f"Model provider selected: {settings.LLM_PROVIDER}")
-    logger.info(f"Model selected: {settings.LLM_MODEL}")
+    llm_config = initialize_llm_config()
+    logger.info(str(llm_config))
 
-    logger.info("Retrieving screen data")
     screen_data: ScreenDataResponse = get_screen_data()
-    logger.info("Screen data retrieved")
+
     device_context_instance = DeviceContext(
         host_platform="WINDOWS" if host_platform == "Windows" else "LINUX",
         mobile_platform="ANDROID" if screen_data.platform == "ANDROID" else "IOS",
@@ -174,54 +168,12 @@ def main(
             help="The path to save the traces.",
         ),
     ] = "traces",
-    provider: Annotated[
-        Optional[str],
-        typer.Option(
-            "--provider",
-            help=f"LLM provider to use. Available: {', '.join(AVAILABLE_MODELS.keys())}. "
-            f"Default: {DEFAULT_PROVIDER} (from LLM_PROVIDER env var)",
-            click_type=Choice(AVAILABLE_MODELS.keys(), case_sensitive=False),
-        ),
-    ] = DEFAULT_PROVIDER,
-    model: Annotated[
-        Optional[str],
-        typer.Option(
-            "--model",
-            help=f"Model name to use. Default: {DEFAULT_MODEL} (from LLM_MODEL env var). "
-            f"Available models vary by provider - use --provider first to see options",
-        ),
-    ] = DEFAULT_MODEL,
 ):
     """
     Run the Minitap agent to automate tasks on a mobile device.
     """
-
-    if provider and not model:
-        typer.echo(f"\nAvailable models for {provider}:")
-        for model_name in AVAILABLE_MODELS:
-            typer.echo(f"  - {model_name}")
-        typer.echo("\nPlease specify a model with --model <model_name>")
-        raise typer.Exit(code=0)
-
     console = Console()
-
     display_device_status(console)
-
-    final_provider, final_model = select_provider_and_model(
-        console=console,
-        available_providers=[str(p) for p in AVAILABLE_MODELS.keys()],
-        available_models=AVAILABLE_MODELS,
-        default_provider=DEFAULT_PROVIDER,
-        default_model=DEFAULT_MODEL,
-        provider=provider,
-        model=model,
-    )
-
-    if final_provider and final_model:
-        validate_model_for_provider(final_provider, final_model)
-
-    display_llm_config(console, final_provider, final_model)
-
     asyncio.run(run_automation(goal, test_name, traces_path))
 
 
