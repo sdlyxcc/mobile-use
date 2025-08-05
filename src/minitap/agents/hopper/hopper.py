@@ -5,6 +5,7 @@ from jinja2 import Template
 from langchain_core.messages import BaseMessage, HumanMessage, SystemMessage
 from pydantic import BaseModel, Field
 
+from minitap.config import LLM
 from minitap.services.llm import get_llm
 
 
@@ -35,7 +36,7 @@ async def hopper(
         HumanMessage(content=data),
     ]
 
-    llm = get_llm(override_provider="openai", override_model="gpt-4.1", override_temperature=0)
+    llm = get_llm(override_llm=LLM(provider="openai", model="gpt-4.1"), temperature=0)
     structured_llm = llm.with_structured_output(HopperOutput)
     response: HopperOutput = await structured_llm.ainvoke(messages)  # type: ignore
     return HopperOutput(

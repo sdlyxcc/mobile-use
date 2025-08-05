@@ -39,9 +39,7 @@ async def executor_node(state: State):
         HumanMessage(content=structured_decisions),
     ]
 
-    llm = get_llm(
-        override_provider="openai", override_model="gpt-4o", override_temperature=0.2
-    ).bind_tools(
+    llm = get_llm(agent_node="executor").bind_tools(
         tools=get_tools_from_wrappers(EXECUTOR_WRAPPERS_TOOLS),
         tool_choice="auto",
     )

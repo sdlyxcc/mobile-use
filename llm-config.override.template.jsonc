@@ -1,0 +1,24 @@
+// Override the LLM config here for the agents.
+
+// Supported providers: openai, google, openrouter, xai
+// You can use any model as long as it is supported by the provider.
+
+// Do not modify this file directly, instead copy it to llm.override.jsonc and modify it there.
+{
+  "planner": {
+    "provider": "",
+    "model": ""
+  },
+  "orchestrator": {
+    "provider": "",
+    "model": ""
+  },
+  "cortex": {
+    "provider": "",
+    "model": ""
+  },
+  "executor": {
+    "provider": "",
+    "model": ""
+  }
+}

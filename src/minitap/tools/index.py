@@ -8,7 +8,8 @@ from minitap.tools.mobile.long_press_on import long_press_on_wrapper
 from minitap.tools.mobile.open_link import open_link_wrapper
 from minitap.tools.mobile.paste_text import paste_text_wrapper
 from minitap.tools.mobile.press_key import press_key_wrapper
-from minitap.tools.mobile.run_flow import run_flow_wrapper
+
+# from minitap.tools.mobile.run_flow import run_flow_wrapper
 from minitap.tools.mobile.stop_app import stop_app_wrapper
 from minitap.tools.mobile.swipe import swipe_wrapper
 from minitap.tools.mobile.take_screenshot import take_screenshot_wrapper
@@ -23,7 +24,7 @@ EXECUTOR_WRAPPERS_TOOLS = [
     long_press_on_wrapper,
     swipe_wrapper,
     take_screenshot_wrapper,
-    run_flow_wrapper,
+    # run_flow_wrapper, # To decomment when subflow is implemented
     copy_text_from_wrapper,
     input_text_wrapper,
     list_packages_wrapper,
