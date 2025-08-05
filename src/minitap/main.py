@@ -19,6 +19,7 @@ from minitap.controllers.mobile_command_controller import ScreenDataResponse, ge
 from minitap.controllers.platform_specific_commands_controller import get_first_device_id
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
+from minitap.llm_config_context import LLMConfigContext, set_llm_config_context
 from minitap.servers.utils import are_ports_available
 from minitap.utils.cli_helpers import display_device_status
 from minitap.utils.logger import get_logger
@@ -66,6 +67,7 @@ async def run_automation(
     host_platform = platform.system()
 
     llm_config = initialize_llm_config()
+    set_llm_config_context(LLMConfigContext(llm_config=llm_config))
     logger.info(str(llm_config))
 
     screen_data: ScreenDataResponse = get_screen_data()

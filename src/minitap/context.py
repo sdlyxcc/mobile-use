@@ -9,24 +9,7 @@ from contextvars import ContextVar
 from pydantic import BaseModel
 from typing_extensions import Literal, Optional
 
-from minitap.config import LLMConfig, get_default_llm_config
-
-
-class LLMConfigContext(BaseModel):
-    llm_config: LLMConfig
-
-
-llm_config_context_var: ContextVar[LLMConfigContext] = ContextVar(
-    "llm_config_context", default=LLMConfigContext(llm_config=get_default_llm_config())
-)
-
-
-def set_llm_config_context(llm_config_context: LLMConfigContext) -> None:
-    llm_config_context_var.set(llm_config_context)
-
-
-def get_llm_config_context() -> LLMConfigContext:
-    return llm_config_context_var.get()
+# Import context functions from llm_config_context to avoid circular imports
 
 
 class DeviceContext(BaseModel):
