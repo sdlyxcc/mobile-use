@@ -30,10 +30,11 @@ To run the project out-of-the-box, you only need to specify an **OpenAI API key*
 To customize the models used by each agent, copy and edit:
 
 ```bash
-cp llm.override.template.json llm.override.json
+cp llm-config.override.template.jsonc llm-config.override.jsonc
 ```
 
 Make sure to provide the relevant API key for the provider you want to use.
+If none of these is set, the llm-config.defaults.jsonc will be used.
 
 ### 4. **Run the project**
 
