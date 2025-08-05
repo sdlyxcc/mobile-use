@@ -14,12 +14,7 @@ source .venv/bin/activate
 ### 2. **Install dependencies**
 
 ```bash
-# Install project dependencies
-uv pip install -r requirements.txt
-# Install dev dependencies
-uv pip install -e ".[dev]"
-# Install & link the project
-uv pip install -e .
+uv sync
 ```
 
 ### 3. **Set the environment variables, configure LLMs**
