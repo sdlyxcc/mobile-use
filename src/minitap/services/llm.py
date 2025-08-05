@@ -5,9 +5,7 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from langchain_openai import ChatOpenAI
 
 from minitap.config import LLM, AgentNode, settings
-from minitap.context import (
-    get_llm_config_context,
-)
+from minitap.llm_config_context import get_llm_config_context
 
 logger = logging.getLogger(__name__)
 
