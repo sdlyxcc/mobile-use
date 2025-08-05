@@ -1,4 +1,5 @@
 import asyncio
+import platform
 import sys
 import time
 from pathlib import Path
@@ -10,7 +11,6 @@ from langchain_core.messages import AIMessage
 from rich.console import Console
 from typing_extensions import Annotated
 
-from minitap.client.adb import adb, get_device
 from minitap.config import settings
 from minitap.constants import (
     AVAILABLE_MODELS,
@@ -18,10 +18,15 @@ from minitap.constants import (
     DEFAULT_PROVIDER,
     RECURSION_LIMIT,
 )
+from minitap.context import DeviceContext, set_execution_setup
+from minitap.controllers.mobile_command_controller import ScreenDataResponse, get_screen_data
+from minitap.controllers.platform_specific_commands_controller import get_first_device_id
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
+from minitap.servers.utils import are_ports_available
 from minitap.utils.cli_helpers import display_device_status, validate_model_for_provider
 from minitap.utils.cli_selection import display_llm_config, select_provider_and_model
+from minitap.utils.logger import get_logger
 from minitap.utils.media import (
     create_gif_from_trace_folder,
     create_steps_json_from_trace_folder,
@@ -31,6 +36,7 @@ from minitap.utils.media import (
 from minitap.utils.time import convert_timestamp_to_str
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
+logger = get_logger(__name__)
 
 
 def print_ai_response_to_stderr(graph_result: dict[str, Any]):
@@ -40,53 +46,78 @@ def print_ai_response_to_stderr(graph_result: dict[str, Any]):
             return
 
 
+async def run_servers():
+    from minitap.servers.start_servers import start_servers_and_get_device_id
+
+    device_id = start_servers_and_get_device_id()
+    return device_id
+
+
 async def run_automation(
     goal: str,
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
     graph_config_callbacks: Optional[list] = [],
 ):
-    print(f"Model provider selected: {settings.LLM_PROVIDER}")
-    print(f"Model selected: {settings.LLM_MODEL}")
+    device_id: str | None = None
+
+    if are_ports_available():
+        logger.error("❌ Mobile-use servers are not started. Starting...")
+        device_id = await run_servers()
+
+    if not device_id:
+        device_id = get_first_device_id()
+
+    host_platform = platform.system()
+
+    logger.info(f"Model provider selected: {settings.LLM_PROVIDER}")
+    logger.info(f"Model selected: {settings.LLM_MODEL}")
+
+    logger.info("Retrieving screen data")
+    screen_data: ScreenDataResponse = get_screen_data()
+    logger.info("Screen data retrieved")
+    device_context_instance = DeviceContext(
+        host_platform="WINDOWS" if host_platform == "Windows" else "LINUX",
+        mobile_platform="ANDROID" if screen_data.platform == "ANDROID" else "IOS",
+        device_id=device_id,
+        device_width=screen_data.width,
+        device_height=screen_data.height,
+    )
+    device_context_instance.set()
+    logger.info(device_context_instance.to_str())
+
     start_time = time.time()
-
-    if not adb.device_list():
-        print("❌ No Android device found. Please connect a device and enable USB debugging.")
-        raise typer.Exit(code=1)
-
-    device = get_device()
-    assert device.serial is not None, "Device serial cannot be None after check."
-
     trace_id: str | None = None
     traces_temp_path: Path | None = None
     traces_output_path: Path | None = None
 
     if test_name:
         traces_output_path = Path(traces_output_path_str).resolve()
-        print(f"📂 Traces output path: {traces_output_path}")
+        logger.info(f"📂 Traces output path: {traces_output_path}")
         traces_temp_path = Path(__file__).parent.joinpath(f"../traces/{test_name}").resolve()
-        print(f"📄📂 Traces temp path: {traces_temp_path}")
+        logger.info(f"📄📂 Traces temp path: {traces_temp_path}")
         traces_output_path.mkdir(parents=True, exist_ok=True)
         traces_temp_path.mkdir(parents=True, exist_ok=True)
         trace_id = test_name
+        set_execution_setup(trace_id)
 
-    print(f"Starting graph with goal: {goal}", flush=True)
+    logger.info(f"Starting graph with goal: `{goal}`")
     graph_input = State(
-        initial_goal=goal,
-        remaining_steps=RECURSION_LIMIT,
         messages=[],
-        is_goal_achieved=False,
-        device_id=device.serial,
+        initial_goal=goal,
+        subgoal_plan=[],
         latest_ui_hierarchy=None,
-        trace_id=trace_id,
-        current_subgoal=None,
-        subgoal_history=[],
-        memory=None,
+        latest_screenshot_base64=None,
+        focused_app_info=None,
+        device_date=None,
+        structured_decisions=None,
+        agents_thoughts=[],
+        remaining_steps=RECURSION_LIMIT,
     ).model_dump()
 
     success = False
     try:
-        print(f"Invoking graph with input: {graph_input}", flush=True)
+        logger.info(f"Invoking graph with input: {graph_input}")
         result = await (await get_graph()).ainvoke(
             input=graph_input,
             config={
@@ -97,10 +128,10 @@ async def run_automation(
 
         print_ai_response_to_stderr(graph_result=result)
 
-        print("✅ Test is success ✅")
+        logger.info("✅ Test is success ✅")
         success = True
     except Exception as e:
-        print(f"❌ Test failed with error: {e} ❌")
+        logger.info(f"❌ Test failed with error: {e} ❌")
         raise
     finally:
         if traces_temp_path and traces_output_path and start_time:
@@ -108,18 +139,18 @@ async def run_automation(
             status = "_PASS" if success else "_FAIL"
             new_name = f"{test_name}{status}_{formatted_ts}"
 
-            print("Compiling trace FROM FOLDER: " + str(traces_temp_path))
+            logger.info("Compiling trace FROM FOLDER: " + str(traces_temp_path))
             create_gif_from_trace_folder(traces_temp_path)
             create_steps_json_from_trace_folder(traces_temp_path)
 
-            print("Video created, removing dust...")
+            logger.info("Video created, removing dust...")
             remove_images_from_trace_folder(traces_temp_path)
             remove_steps_json_from_trace_folder(traces_temp_path)
-            print("📽️ Trace compiled, moving to output path 📽️")
+            logger.info("📽️ Trace compiled, moving to output path 📽️")
 
             # moving all the content that is inside the traces folder into the new path
             output_folder_path = traces_temp_path.rename(traces_output_path / new_name)
-            print(f"📂✅ Trace folder renamed to: {output_folder_path.name}")
+            logger.info(f"📂✅ Trace folder renamed to: {output_folder_path.name}")
 
         await asyncio.sleep(1)
 

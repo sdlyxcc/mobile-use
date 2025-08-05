@@ -1,22 +1,54 @@
+from typing import Union
+
+from langchain_core.messages import AIMessage
 from langgraph.prebuilt.chat_agent_executor import AgentStatePydantic
-from pydantic import BaseModel
 from typing_extensions import Annotated, Optional
 
+from minitap.agents.planner.types import Subgoal
+from minitap.context import is_execution_setup_set
+from minitap.utils.logger import get_logger
+from minitap.utils.recorder import record_interaction
 
-class Subgoal(BaseModel):
-    description: Annotated[str, "Description of the subgoal"]
-    completion_reason: Annotated[
-        Optional[str], "Reason why the subgoal was completed (failure or success)"
-    ]
-    success: bool
+logger = get_logger(__name__)
+
+
+def add_agent_thought(a: list[str], b: Union[str, list[str]]) -> list[str]:
+    if is_execution_setup_set():
+        record_interaction(response=AIMessage(content=str(b)))
+    if isinstance(b, str):
+        return a + [b]
+    elif isinstance(b, list):
+        return a + b
+    raise TypeError("b must be a str or list[str]")
+
+
+def take_last(a, b):
+    return b
 
 
 class State(AgentStatePydantic):
+    # planner related keys
     initial_goal: Annotated[str, "Initial goal given by the user"]
-    is_goal_achieved: Annotated[bool, "Whether the goal has been achieved"]
-    device_id: Annotated[str, "ID of the device we're interacting with"]
-    trace_id: Annotated[str | None, "ID of the run"]
-    latest_ui_hierarchy: Annotated[str | None, "Latest UI hierarchy"]
-    subgoal_history: Annotated[list[Subgoal], "History of subgoals"]
-    current_subgoal: Annotated[Optional[Subgoal], "Current subgoal"]
-    memory: Annotated[Optional[str], "Your long term memory"]
+
+    # orchestrator related keys
+    subgoal_plan: Annotated[list[Subgoal], "The current plan, made of subgoals"]
+
+    # contextor related keys
+    latest_screenshot_base64: Annotated[Optional[str], "Latest screenshot of the device", take_last]
+    latest_ui_hierarchy: Annotated[Optional[list], "Latest UI hierarchy of the device", take_last]
+    focused_app_info: Annotated[Optional[str], "Focused app info", take_last]
+    device_date: Annotated[Optional[str], "Date of the device", take_last]
+
+    # cortex related keys
+    structured_decisions: Annotated[
+        Optional[str],
+        "Structured decisions made by the cortex, for the executor to follow",
+        take_last,
+    ]
+
+    # common keys
+    agents_thoughts: Annotated[
+        list[str],
+        "All thoughts and reasons that led to actions (why a tool was called, expected outcomes..)",
+        add_agent_thought,
+    ]

@@ -77,7 +77,7 @@ def get_grok_llm(model_name: str, temperature: float = 1) -> ChatOpenAI:
 
 def get_llm(
     override_provider: Optional[LLMProvider] = None,
-    override_model: Optional[LLMModel] = None,
+    override_model: Optional[str] = None,
     override_temperature: float = 1,
 ):
     """Get LLM instance using provider/model from context, environment variables, or defaults.

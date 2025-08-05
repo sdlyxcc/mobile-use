@@ -24,9 +24,9 @@ class MemoraOutput(BaseModel):
 
 
 @wrap_with_callbacks(
-    before=lambda: print("🧠 Starting Memora Agent...", end="", flush=True),
-    on_success=lambda _: print("✅", flush=True),
-    on_failure=lambda _: print("❌", flush=True),
+    before=lambda: print("🧠 Starting Memora Agent..."),
+    on_success=lambda _: print("✅"),
+    on_failure=lambda _: print("❌"),
 )
 async def memora(
     initial_goal: str,

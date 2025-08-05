@@ -1,84 +1,57 @@
-import time
 from pathlib import Path
 
 from jinja2 import Template
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
-from langchain_core.tools import BaseTool
+from langchain_core.messages import AIMessage, SystemMessage
 
+from minitap.agents.planner.types import PlannerOutput, Subgoal, SubgoalStatus
+from minitap.agents.planner.utils import one_of_them_is_failure
+from minitap.context import get_device_context
 from minitap.graph.state import State
 from minitap.services.llm import get_llm
-from minitap.tools.index import ALL_TOOLS
-from minitap.tools.maestro import get_maestro_tools
-from minitap.utils.adb import get_date, get_focused_app_info, get_screen_size
 from minitap.utils.decorators import wrap_with_callbacks
-from minitap.utils.recorder import record_interaction
+from minitap.utils.logger import get_logger
+
+logger = get_logger(__name__)
 
 
 @wrap_with_callbacks(
-    before=lambda: print("📃 Starting Planner Agent...", end="", flush=True),
-    on_success=lambda _: print("✅", flush=True),
-    on_failure=lambda _: print("❌", flush=True),
+    before=lambda: logger.info("Starting Planner Agent..."),
+    on_success=lambda _: logger.success("Planner Agent"),
+    on_failure=lambda _: logger.error("Planner Agent"),
 )
 async def planner_node(state: State):
-    start_time = time.time()
-    print(f"[TIMING] Starting Planner Agent at {start_time}", flush=True)
-    focused_app_info = get_focused_app_info()
-    screensize = get_screen_size()
-    device_date = get_date()
-    system_message = Template(Path(__file__).parent.joinpath("planner.md").read_text()).render(
+    device_context = get_device_context()
+
+    needs_replan = one_of_them_is_failure(state.subgoal_plan)
+
+    system_message = Template(
+        Path(__file__).parent.joinpath("planner.md").read_text(encoding="utf-8")
+    ).render(
+        platform=device_context.mobile_platform,
+        action="replan" if needs_replan else "plan",
         initial_goal=state.initial_goal,
-        device_id=state.device_id,
-        focused_app_info=focused_app_info,
-        screensize=screensize,
-        latest_ui_hierarchy=state.latest_ui_hierarchy,
-        subgoal_history=state.subgoal_history,
-        current_subgoal=state.current_subgoal,
-        device_date=device_date,
-        memory=state.memory,
+        previous_plan="\n".join(str(s) for s in state.subgoal_plan),
+        agent_thoughts="\n".join(state.agents_thoughts),
     )
     messages = [
         SystemMessage(content=system_message),
-        HumanMessage(content=state.initial_goal),
-        *state.messages,
     ]
-    print(f"[TIMING] Prepared messages at {time.time() - start_time}", flush=True)
-    maestro_tools = await get_maestro_tools(return_all=False)
 
-    llm = get_llm().bind_tools(
-        tools=ALL_TOOLS + maestro_tools,
-        tool_choice="auto",
-    )
-    print(f"DEBUG [chatbot] - LLM invoked with {len(messages)} messages..")
-    try:
-        print(f"[TIMING] Invoked LLM at {time.time() - start_time}", flush=True)
-        response = await llm.ainvoke(messages)
-    except Exception as e:
-        print(
-            f"[TIMING] LLM invocation failed after {time.time() - start_time:.2f} seconds",
-            flush=True,
-        )
-        print(
-            f"LLM invocation failed for goal: '{state.initial_goal}' ",
-            e,
-        )
-        response = AIMessage(
-            content="I apologize, but I encountered an error processing your request."
-            " Please try again or contact support if the issue persists."
-        )
-    print("Response from LLM: " + str(response.content))
+    llm = get_llm(override_provider="openai", override_model="gpt-4o", override_temperature=0.4)
+    llm = llm.with_structured_output(PlannerOutput)
+    response: PlannerOutput = await llm.ainvoke(messages)  # type: ignore
 
-    if state.trace_id:
-        screenshot_tool: BaseTool | None = None
-        for tool in maestro_tools:
-            if tool.name == "take_screenshot":
-                screenshot_tool = tool
-                break
-        if screenshot_tool:
-            record_interaction(
-                trace_id=state.trace_id,
-                response=response,
-            )
+    subgoals_plan = [
+        Subgoal(
+            description=subgoal,
+            status=SubgoalStatus.NOT_STARTED,
+            completion_reason=None,
+        )
+        for subgoal in response.subgoals
+    ]
 
     return {
-        "messages": [response],
+        "messages": [AIMessage(content="A new plan has been generated.")],
+        "needs_replan": False,
+        "subgoal_plan": subgoals_plan,
     }

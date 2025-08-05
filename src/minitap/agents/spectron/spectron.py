@@ -15,9 +15,9 @@ class SpectronOutput(BaseModel):
 
 
 @wrap_with_callbacks(
-    before=lambda: print("👁️📱 Analyzing UI...", end="", flush=True),
-    on_success=lambda _: print("✅", flush=True),
-    on_failure=lambda _: print("❌", flush=True),
+    before=lambda: print("👁️📱 Analyzing UI..."),
+    on_success=lambda _: print("✅"),
+    on_failure=lambda _: print("❌"),
 )
 async def spectron(
     ui_hierarchy: str,
@@ -26,7 +26,7 @@ async def spectron(
     screenshot_message: Optional[HumanMessage] = None,
 ) -> SpectronOutput:
     spectron_system_message = Template(
-        Path(__file__).parent.joinpath("spectron.md").read_text()
+        Path(__file__).parent.joinpath("spectron.md").read_text(encoding="utf-8")
     ).render(
         current_subgoal=current_subgoal,
         initial_goal=initial_goal,
