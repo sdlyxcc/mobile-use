@@ -1,5 +1,6 @@
 import json
 import os
+from pathlib import Path
 from typing import Literal, Optional
 
 from dotenv import load_dotenv
@@ -62,9 +63,9 @@ class LLMConfig(BaseModel):
 def get_default_llm_config() -> LLMConfig:
     logger.success("Default llm config set")
     try:
-        if not os.path.exists("llm.default.jsonc"):
+        if not os.path.exists(DEFAULT_LLM_CONFIG_FILENAME):
             raise Exception("Default llm config not found")
-        with open("llm.default.jsonc", "r") as f:
+        with open(DEFAULT_LLM_CONFIG_FILENAME, "r") as f:
             default_config_dict = json.load(f)
         return LLMConfig.model_validate(default_config_dict)
     except Exception as e:
@@ -89,11 +90,16 @@ def deep_merge_llm_config(default: LLMConfig, override: dict) -> LLMConfig:
     return LLMConfig.model_validate(merged_dict)
 
 
+ROOT_DIR = Path(__file__).parent.parent
+DEFAULT_LLM_CONFIG_FILENAME = "llm.default.jsonc"
+OVERRIDE_LLM_CONFIG_FILENAME = "llm.override.jsonc"
+
+
 def parse_llm_config() -> LLMConfig:
-    if not os.path.exists("llm.override.jsonc"):
+    if not os.path.exists(ROOT_DIR / DEFAULT_LLM_CONFIG_FILENAME):
         return get_default_llm_config()
 
-    with open("llm.override.jsonc", "r") as f:
+    with open(ROOT_DIR / OVERRIDE_LLM_CONFIG_FILENAME, "r") as f:
         override_config_dict = json.load(f)
 
     try:
