@@ -21,6 +21,9 @@ class Settings(BaseSettings):
     XAI_API_KEY: Optional[SecretStr] = None
     OPEN_ROUTER_API_KEY: Optional[SecretStr] = None
 
+    DEVICE_SCREEN_API_BASE_URL: Optional[str] = None
+    DEVICE_HARDWARE_BRIDGE_BASE_URL: Optional[str] = None
+
     model_config = {"env_file": ".env", "extra": "ignore"}
 
 

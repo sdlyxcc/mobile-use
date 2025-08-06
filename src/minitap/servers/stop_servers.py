@@ -6,6 +6,8 @@ import psutil
 import requests
 
 from minitap.utils.logger import get_server_logger
+from minitap.servers.config import server_settings
+from minitap.servers.device_hardware_bridge import DEVICE_HARDWARE_BRIDGE_PORT
 
 logger = get_server_logger()
 
@@ -75,9 +77,9 @@ def stop_process_gracefully(process: psutil.Process, timeout: int = 5) -> bool:
 
 def check_service_health(port: int, service_name: str) -> bool:
     try:
-        if port == 9998:
-            response = requests.get(f"http://localhost:{port}/health-check", timeout=2)
-        elif port == 9999:
+        if port == server_settings.DEVICE_SCREEN_API_PORT:
+            response = requests.get(f"http://localhost:{port}/health", timeout=2)
+        elif port == DEVICE_HARDWARE_BRIDGE_PORT:
             response = requests.get(f"http://localhost:{port}/api/banner-message", timeout=2)
         else:
             return False
@@ -93,13 +95,14 @@ def check_service_health(port: int, service_name: str) -> bool:
 
 def stop_device_screen_api() -> bool:
     logger.info("Stopping Device Screen API...")
+    api_port = server_settings.DEVICE_SCREEN_API_PORT
 
-    if not check_service_health(9998, "Device Screen API"):
+    if not check_service_health(api_port, "Device Screen API"):
         logger.success("Device Screen API is not running")
         return True
 
     # Find processes by port
-    processes = find_processes_by_port(9998)
+    processes = find_processes_by_port(api_port)
 
     # Also find by process name/command
     uvicorn_processes = find_processes_by_name("uvicorn")
@@ -111,7 +114,7 @@ def stop_device_screen_api() -> bool:
         logger.warning("No Device Screen API processes found, but service is still responding")
         # Still try to verify if service actually stops
         time.sleep(1)
-        if not check_service_health(9998, "Device Screen API"):
+        if not check_service_health(api_port, "Device Screen API"):
             logger.success("Device Screen API stopped successfully (was orphaned)")
             return True
         return False
@@ -122,7 +125,7 @@ def stop_device_screen_api() -> bool:
 
     # Verify service is stopped
     time.sleep(1)
-    if check_service_health(9998, "Device Screen API"):
+    if check_service_health(api_port, "Device Screen API"):
         logger.error("Device Screen API is still running after stop attempt")
         return False
 
@@ -133,11 +136,11 @@ def stop_device_screen_api() -> bool:
 def stop_device_hardware_bridge() -> bool:
     logger.info("Stopping Device Hardware Bridge...")
 
-    if not check_service_health(9999, "Maestro Studio"):
+    if not check_service_health(DEVICE_HARDWARE_BRIDGE_PORT, "Maestro Studio"):
         logger.success("Device Hardware Bridge is not running")
         return True
 
-    processes = find_processes_by_port(9999)
+    processes = find_processes_by_port(DEVICE_HARDWARE_BRIDGE_PORT)
 
     maestro_processes = find_processes_by_name("maestro")
 
@@ -147,7 +150,7 @@ def stop_device_hardware_bridge() -> bool:
         logger.warning("No Device Hardware Bridge processes found, but service is still responding")
         # Still try to verify if service actually stops
         time.sleep(1)
-        if not check_service_health(9999, "Maestro Studio"):
+        if not check_service_health(DEVICE_HARDWARE_BRIDGE_PORT, "Maestro Studio"):
             logger.success("Device Hardware Bridge stopped successfully (was orphaned)")
             return True
         return False
@@ -156,7 +159,7 @@ def stop_device_hardware_bridge() -> bool:
         stop_process_gracefully(proc)
 
     time.sleep(1)
-    if check_service_health(9999, "Maestro Studio"):
+    if check_service_health(DEVICE_HARDWARE_BRIDGE_PORT, "Maestro Studio"):
         logger.error("Device Hardware Bridge is still running after stop attempt")
         return False
 
@@ -164,53 +167,41 @@ def stop_device_hardware_bridge() -> bool:
     return True
 
 
-def stop_all_servers(quiet: bool = False) -> tuple[bool, bool]:
+def stop_servers(
+    device_screen_api: bool = False, device_hardware_bridge: bool = False
+) -> tuple[bool, bool]:
     """Stop all servers and return (api_success, bridge_success).
 
     Args:
-        quiet: If True, suppress log output (useful when called from other modules)
+        device_screen_api: If True, stop the Device Screen API
+        device_hardware_bridge: If True, stop the Device Hardware Bridge
 
     Returns:
         Tuple of (api_stopped, bridge_stopped) booleans
     """
-    if not quiet:
-        logger.header("Stopping Mobile-Use Servers")
+    api_success = stop_device_screen_api() if device_screen_api else True
+    bridge_success = stop_device_hardware_bridge() if device_hardware_bridge else True
 
-    # Stop both services
-    api_success = stop_device_screen_api()
-    bridge_success = stop_device_hardware_bridge()
-
-    if not quiet:
-        # Summary
-        logger.header("Stop Summary")
-        if api_success and bridge_success:
-            logger.success("All servers stopped successfully")
-        elif api_success:
-            logger.warning("Device Screen API stopped, but Device Hardware Bridge had issues")
-        elif bridge_success:
-            logger.warning("Device Hardware Bridge stopped, but Device Screen API had issues")
-        else:
-            logger.error("Failed to stop both servers")
+    if api_success and bridge_success:
+        logger.success("All servers stopped successfully")
+    elif api_success:
+        logger.warning("Device Screen API stopped, but Device Hardware Bridge had issues")
+    elif bridge_success:
+        logger.warning("Device Hardware Bridge stopped, but Device Screen API had issues")
+    else:
+        logger.error("Failed to stop both servers")
 
     return api_success, bridge_success
 
 
 def main():
     """Main function to stop all servers."""
-    api_success = stop_device_screen_api()
-    bridge_success = stop_device_hardware_bridge()
-
+    api_success, bridge_success = stop_servers(device_screen_api=True, device_hardware_bridge=True)
     if api_success and bridge_success:
-        logger.success("All servers stopped successfully")
         return 0
-    elif api_success:
-        logger.warning("Device Screen API stopped, but Device Hardware Bridge had issues")
-        return 1
-    elif bridge_success:
-        logger.warning("Device Hardware Bridge stopped, but Device Screen API had issues")
+    elif api_success or bridge_success:
         return 1
     else:
-        logger.error("Failed to stop both servers")
         return 2
 
 
