@@ -41,10 +41,10 @@ tap_wrapper = ToolWrapper(
     tool_fn=tap,
     on_success_fn=(
         lambda selector_request,
-        index: f"Tap on {selector_request} {"at index {index}" if index else ""} is successful."
+        index: f"Tap on {selector_request} {'at index {index}' if index else ''} is successful."
     ),
     on_failure_fn=(
         lambda selector_request,
-        index: f"Failed to tap on {selector_request} {"at index {index}" if index else ""}."
+        index: f"Failed to tap on {selector_request} {'at index {index}' if index else ''}."
     ),
 )

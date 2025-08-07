@@ -8,6 +8,7 @@ from minitap.clients.screen_api_client import get_client as get_screen_api_clien
 from minitap.config import settings
 from minitap.utils.errors import ControllerErrors
 from minitap.utils.logger import get_logger
+import yaml
 
 screen_api = get_screen_api_client(settings.DEVICE_SCREEN_API_BASE_URL)
 device_hardware_api = get_device_hardware_client(settings.DEVICE_HARDWARE_BRIDGE_BASE_URL)
@@ -61,6 +62,9 @@ class CoordinatesSelectorRequest(BaseModel):
     x: int
     y: int
 
+    def to_str(self):
+        return f"{self.x}, {self.y}"
+
 
 class PercentagesSelectorRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
@@ -73,25 +77,50 @@ class PercentagesSelectorRequest(BaseModel):
     x_percent: float
     y_percent: float
 
+    def to_str(self):
+        return f"{self.x_percent}%, {self.y_percent}%"
+
 
 class IdSelectorRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     id: str
+
+    def to_dict(self) -> dict[str, str | int]:
+        return {"id": self.id}
+
+
+# Useful to tap on an element when there are multiple views with the same id
+class IdWithTextSelectorRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    id: str
+    text: str
+
+    def to_dict(self) -> dict[str, str | int]:
+        return {"id": self.id, "text": self.text}
 
 
 class TextSelectorRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     text: str
 
+    def to_dict(self) -> dict[str, str | int]:
+        return {"text": self.text}
+
 
 class SelectorRequestWithCoordinates(BaseModel):
     model_config = ConfigDict(extra="forbid")
     coordinates: CoordinatesSelectorRequest
 
+    def to_dict(self) -> dict[str, str | int]:
+        return {"point": self.coordinates.to_str()}
+
 
 class SelectorRequestWithPercentages(BaseModel):
     model_config = ConfigDict(extra="forbid")
     percentages: PercentagesSelectorRequest
+
+    def to_dict(self) -> dict[str, str | int]:
+        return {"point": self.percentages.to_str()}
 
 
 SelectorRequest = Union[
@@ -99,22 +128,8 @@ SelectorRequest = Union[
     SelectorRequestWithCoordinates,
     SelectorRequestWithPercentages,
     TextSelectorRequest,
+    IdWithTextSelectorRequest,
 ]
-
-
-def format_selector_request_for_yaml(request: SelectorRequest):
-    if isinstance(request, IdSelectorRequest):
-        return f"\n id: {request.id}\n"
-    elif isinstance(request, SelectorRequestWithCoordinates):
-        return f"\n point: {request.coordinates.x},{request.coordinates.y}\n"
-    elif isinstance(request, SelectorRequestWithPercentages):
-        return f"\n point: {request.percentages.x_percent}%,{request.percentages.y_percent}%\n"
-    elif isinstance(request, TextSelectorRequest):
-        return f"\n text: {request.text}\n"
-    else:
-        error = "Invalid tap selector request, could not format yaml"
-        logger.error(error)
-        raise ControllerErrors(error)
 
 
 def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None):
@@ -122,20 +137,28 @@ def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optiona
     Tap on a selector.
     Index is optional and is used when you have multiple views matching the same selector.
     """
-    yaml = format_selector_request_for_yaml(selector_request)
-    flow_input = f"tapOn:{yaml}"
+    tap_body = selector_request.to_dict()
+    if not tap_body:
+        error = "Invalid tap selector request, could not format yaml"
+        logger.error(error)
+        raise ControllerErrors(error)
     if index:
-        flow_input += f"\nindex: {index}\n"
+        tap_body["index"] = index
+    flow_input = yaml.dump({"tapOn": tap_body})
     return run_flow(flow_input, dry_run=dry_run)
 
 
 def long_press_on(
     selector_request: SelectorRequest, dry_run: bool = False, index: Optional[int] = None
 ):
-    yaml = format_selector_request_for_yaml(selector_request)
-    flow_input = f"longPressOn:{yaml}"
+    long_press_on_body = selector_request.to_dict()
+    if not long_press_on_body:
+        error = "Invalid longPressOn selector request, could not format yaml"
+        logger.error(error)
+        raise ControllerErrors(error)
     if index:
-        flow_input += f"\nindex: {index}\n"
+        long_press_on_body["index"] = index
+    flow_input = yaml.dump({"longPressOn": long_press_on_body})
     return run_flow(flow_input, dry_run=dry_run)
 
 
@@ -144,11 +167,17 @@ class SwipeStartEndCoordinatesRequest(BaseModel):
     start: CoordinatesSelectorRequest
     end: CoordinatesSelectorRequest
 
+    def to_dict(self):
+        return {"start": self.start.to_str(), "end": self.end.to_str()}
+
 
 class SwipeStartEndPercentagesRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
     start: PercentagesSelectorRequest
     end: PercentagesSelectorRequest
+
+    def to_dict(self):
+        return {"start": self.start.to_str(), "end": self.end.to_str()}
 
 
 class SwipeRequest(BaseModel):
@@ -158,28 +187,27 @@ class SwipeRequest(BaseModel):
     direction: Optional[Literal["UP", "DOWN", "LEFT", "RIGHT"]] = None
     duration: Optional[int] = None  # in ms, default is 400ms
 
+    def to_dict(self):
+        res = {}
+        if self.start_end_coordinates:
+            res |= self.start_end_coordinates.to_dict()
+        elif self.start_end_percentages:
+            res |= self.start_end_percentages.to_dict()
+        if self.direction:
+            res |= {"direction": self.direction}
+        if self.duration:
+            res |= {"duration": self.duration}
+        return res
+
 
 def swipe(swipe_request: SwipeRequest, dry_run: bool = False):
-    yaml = ""
-    if swipe_request.start_end_coordinates:
-        yaml += f"\n start: {swipe_request.start_end_coordinates.start.x},"
-        yaml += f"{swipe_request.start_end_coordinates.start.y}\n"
-        yaml += f"\n end: {swipe_request.start_end_coordinates.end.x},"
-        yaml += f"{swipe_request.start_end_coordinates.end.y}\n"
-    elif swipe_request.start_end_percentages:
-        yaml += f"\n start: {swipe_request.start_end_percentages.start.x_percent}%,"
-        yaml += f"{swipe_request.start_end_percentages.start.y_percent}%\n"
-        yaml += f"\n end: {swipe_request.start_end_percentages.end.x_percent}%,"
-        yaml += f"{swipe_request.start_end_percentages.end.y_percent}%\n"
-    if swipe_request.direction:
-        yaml += f"\n direction: {swipe_request.direction}\n"
-    if swipe_request.duration:
-        yaml += f"\n duration: {swipe_request.duration}\n"
-    if not yaml:
+    swipe_body = swipe_request.to_dict()
+    if not swipe_body:
         error = "Invalid swipe selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    return run_flow(f"swipe:{yaml}", dry_run=dry_run)
+    flow_input = yaml.dump({"swipe": swipe_body})
+    return run_flow(flow_input, dry_run=dry_run)
 
 
 ##### Text related commands #####
@@ -190,8 +218,13 @@ def input_text(text: str, dry_run: bool = False):
 
 
 def copy_text_from(selector_request: SelectorRequest, dry_run: bool = False):
-    yaml = format_selector_request_for_yaml(selector_request)
-    return run_flow(f"copyTextFrom:{yaml}\n", dry_run=dry_run)
+    copy_text_from_body = selector_request.to_dict()
+    if not copy_text_from_body:
+        error = "Invalid copyTextFrom selector request, could not format yaml"
+        logger.error(error)
+        raise ControllerErrors(error)
+    flow_input = yaml.dump({"copyTextFrom": copy_text_from_body})
+    return run_flow(flow_input, dry_run=dry_run)
 
 
 def paste_text(dry_run: bool = False):
