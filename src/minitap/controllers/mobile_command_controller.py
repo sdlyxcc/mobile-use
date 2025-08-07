@@ -144,8 +144,8 @@ def tap(selector_request: SelectorRequest, dry_run: bool = False, index: Optiona
         raise ControllerErrors(error)
     if index:
         tap_body["index"] = index
-    flow_input = yaml.dump({"tapOn": tap_body})
-    return run_flow(flow_input, dry_run=dry_run)
+    flow_input = [{"tapOn": tap_body}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 def long_press_on(
@@ -158,8 +158,8 @@ def long_press_on(
         raise ControllerErrors(error)
     if index:
         long_press_on_body["index"] = index
-    flow_input = yaml.dump({"longPressOn": long_press_on_body})
-    return run_flow(flow_input, dry_run=dry_run)
+    flow_input = [{"longPressOn": long_press_on_body}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 class SwipeStartEndCoordinatesRequest(BaseModel):
@@ -206,8 +206,8 @@ def swipe(swipe_request: SwipeRequest, dry_run: bool = False):
         error = "Invalid swipe selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    flow_input = yaml.dump({"swipe": swipe_body})
-    return run_flow(flow_input, dry_run=dry_run)
+    flow_input = [{"swipe": swipe_body}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 ##### Text related commands #####
@@ -245,24 +245,29 @@ def erase_text(nb_chars: Optional[int] = None, dry_run: bool = False):
 
 
 def launch_app(package_name: str, dry_run: bool = False):
-    return run_flow(f"launchApp: {package_name}\n", dry_run=dry_run)
+    flow_input = [{"launchApp": package_name}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 def stop_app(package_name: Optional[str] = None, dry_run: bool = False):
     if package_name is None:
-        return run_flow("stopApp\n", dry_run=dry_run)
-    return run_flow(f"stopApp: {package_name}\n", dry_run=dry_run)
+        flow_input = ["stopApp"]
+    else:
+        flow_input = [{"stopApp": package_name}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 def open_link(url: str, dry_run: bool = False):
-    return run_flow(f"openLink: {url}\n", dry_run=dry_run)
+    flow_input = [{"openLink": url}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 ##### Key related commands #####
 
 
 def back(dry_run: bool = False):
-    return run_flow("back\n", dry_run=dry_run)
+    flow_input = ["back"]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 class Key(Enum):
@@ -272,7 +277,8 @@ class Key(Enum):
 
 
 def press_key(key: Key, dry_run: bool = False):
-    return run_flow(f"pressKey: {key.value}\n", dry_run=dry_run)
+    flow_input = [{"pressKey": key.value}]
+    return run_flow_with_wait_for_animation_to_end(flow_input, dry_run=dry_run)
 
 
 #### Other commands ####
@@ -288,6 +294,12 @@ def wait_for_animation_to_end(timeout: Optional[WaitTimeout] = None, dry_run: bo
     if timeout is None:
         return run_flow("waitForAnimationToEnd\n", dry_run=dry_run)
     return run_flow(f"waitForAnimationToEnd:\n  timeout: {timeout.value}\n", dry_run=dry_run)
+
+
+def run_flow_with_wait_for_animation_to_end(base_flow: list, dry_run: bool = False):
+    base_flow.append({"waitForAnimationToEnd": {"timeout": WaitTimeout.MEDIUM.value}})
+    flow = yaml.dump(base_flow)
+    return run_flow(flow, dry_run=dry_run)
 
 
 if __name__ == "__main__":
