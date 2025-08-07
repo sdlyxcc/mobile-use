@@ -17,7 +17,6 @@ logger = get_logger(__name__)
     on_failure=lambda _: logger.error("Contextor Agent"),
 )
 def contextor_node(state: State):
-    wait_for_animation_to_end()
     device_data = get_screen_data()
     focused_app_info = get_focused_app_info()
     device_date = get_device_date()
