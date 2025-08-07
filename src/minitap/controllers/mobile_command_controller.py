@@ -5,11 +5,12 @@ from pydantic import BaseModel, ConfigDict, Field
 
 from minitap.clients.device_hardware_client import get_client as get_device_hardware_client
 from minitap.clients.screen_api_client import get_client as get_screen_api_client
+from minitap.config import settings
 from minitap.utils.errors import ControllerErrors
 from minitap.utils.logger import get_logger
 
-screen_api = get_screen_api_client()
-device_hardware_api = get_device_hardware_client()
+screen_api = get_screen_api_client(settings.DEVICE_SCREEN_API_BASE_URL)
+device_hardware_api = get_device_hardware_client(settings.DEVICE_HARDWARE_BRIDGE_BASE_URL)
 logger = get_logger(__name__)
 
 

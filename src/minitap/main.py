@@ -1,4 +1,5 @@
 import asyncio
+import multiprocessing
 import platform
 import sys
 import time
@@ -20,7 +21,12 @@ from minitap.controllers.platform_specific_commands_controller import get_first_
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.llm_config_context import LLMConfigContext, set_llm_config_context
-from minitap.servers.utils import are_ports_available
+from minitap.servers.device_hardware_bridge import BridgeStatus
+from minitap.servers.start_servers import (
+    check_device_screen_api_health,
+    start_device_screen_api,
+    start_device_hardware_bridge,
+)
 from minitap.utils.cli_helpers import display_device_status
 from minitap.utils.logger import get_logger
 from minitap.utils.media import (
@@ -30,6 +36,7 @@ from minitap.utils.media import (
     remove_steps_json_from_trace_folder,
 )
 from minitap.utils.time import convert_timestamp_to_str
+from minitap.config import settings
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
 logger = get_logger(__name__)
@@ -42,11 +49,63 @@ def print_ai_response_to_stderr(graph_result: dict[str, Any]):
             return
 
 
-async def run_servers():
-    from minitap.servers.start_servers import start_servers_and_get_device_id
+def run_servers() -> tuple[str | None, bool]:
+    """
+    Starts all required servers, waits for them to be ready,
+    and returns the device ID if available.
+    """
+    device_id = None
+    api_process = None
 
-    device_id = start_servers_and_get_device_id()
-    return device_id
+    if not settings.DEVICE_HARDWARE_BRIDGE_BASE_URL:
+        bridge_instance = start_device_hardware_bridge()
+        if not bridge_instance:
+            logger.warning("Failed to start Device Hardware Bridge. Exiting.")
+            logger.info(
+                "Note: Device Screen API requires Device Hardware Bridge to function properly."
+            )
+            return (None, False)
+
+        logger.info("Waiting for Device Hardware Bridge to connect to a device...")
+        while True:
+            status_info = bridge_instance.get_status()
+            status = status_info.get("status")
+            output = status_info.get("output")
+
+            if status == BridgeStatus.RUNNING.value:
+                device_id = bridge_instance.get_device_id()
+                logger.success(
+                    f"Device Hardware Bridge is running. Connected to device: {device_id}"
+                )
+                break
+
+            failed_statuses = [
+                BridgeStatus.NO_DEVICE.value,
+                BridgeStatus.FAILED.value,
+                BridgeStatus.PORT_IN_USE.value,
+                BridgeStatus.STOPPED.value,
+            ]
+            if status in failed_statuses:
+                logger.error(
+                    f"Device Hardware Bridge failed to connect. Status: {status} - Output: {output}"
+                )
+                return (None, False)
+
+            time.sleep(1)
+
+    if not settings.DEVICE_SCREEN_API_BASE_URL:
+        api_process = start_device_screen_api(use_process=True)
+        if not api_process or not isinstance(api_process, multiprocessing.Process):
+            logger.error("Failed to start Device Screen API. Exiting.")
+            return (None, False)
+
+    if not check_device_screen_api_health(base_url=settings.DEVICE_SCREEN_API_BASE_URL):
+        logger.error("Device Screen API health check failed. Stopping...")
+        if api_process:
+            api_process.terminate()
+        return (None, False)
+
+    return (device_id, True)
 
 
 async def run_automation(
@@ -57,9 +116,11 @@ async def run_automation(
 ):
     device_id: str | None = None
 
-    if are_ports_available():
-        logger.error("❌ Mobile-use servers are not started. Starting...")
-        device_id = await run_servers()
+    logger.info("⚙️ Starting Mobile-use servers...")
+    device_id, success = run_servers()
+    if not success:
+        logger.error("❌ Mobile-use servers failed to start. Exiting.")
+        return
 
     if not device_id:
         device_id = get_first_device_id()

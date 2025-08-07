@@ -10,12 +10,11 @@ from fastapi import FastAPI, HTTPException
 from fastapi.responses import JSONResponse
 from sseclient import SSEClient
 
-from minitap.servers.device_hardware_bridge import MAESTRO_STUDIO_PORT
+from minitap.servers.config import server_settings
+from minitap.servers.utils import is_port_in_use
 
-DEVICE_SCREEN_API_PORT = 9998
-
-MAESTRO_STUDIO_SERVER_ROOT = f"http://localhost:{MAESTRO_STUDIO_PORT}"
-MAESTRO_STUDIO_API_URL = f"{MAESTRO_STUDIO_SERVER_ROOT}/api"
+DEVICE_HARDWARE_BRIDGE_BASE_URL = server_settings.DEVICE_HARDWARE_BRIDGE_BASE_URL
+DEVICE_HARDWARE_BRIDGE_API_URL = f"{DEVICE_HARDWARE_BRIDGE_BASE_URL}/api"
 
 _latest_screen_data = None
 _data_lock = threading.Lock()
@@ -25,7 +24,7 @@ _stop_event = threading.Event()
 
 def _stream_worker():
     global _latest_screen_data
-    sse_url = f"{MAESTRO_STUDIO_API_URL}/device-screen/sse"
+    sse_url = f"{DEVICE_HARDWARE_BRIDGE_API_URL}/device-screen/sse"
     headers = {"Accept": "text/event-stream"}
 
     while not _stop_event.is_set():
@@ -46,7 +45,7 @@ def _stream_worker():
                         height = data.get("height")
                         platform = data.get("platform")
 
-                        image_url = f"{MAESTRO_STUDIO_SERVER_ROOT}{screenshot_path}"
+                        image_url = f"{DEVICE_HARDWARE_BRIDGE_BASE_URL}{screenshot_path}"
                         image_response = requests.get(image_url)
                         image_response.raise_for_status()
                         base64_image = base64.b64encode(image_response.content).decode("utf-8")
@@ -96,14 +95,21 @@ app = FastAPI(lifespan=lifespan)
 
 
 def get_latest_data():
-    """Helper to get the latest data safely."""
-    with _data_lock:
-        if _latest_screen_data is None:
-            raise HTTPException(
-                status_code=503,
-                detail="Screen data is not yet available. Please try again shortly.",
-            )
-        return _latest_screen_data
+    """Helper to get the latest data safely, with retries."""
+    max_wait_time = 30  # seconds
+    retry_delay = 2  # seconds
+    start_time = time.time()
+
+    while time.time() - start_time < max_wait_time:
+        with _data_lock:
+            if _latest_screen_data is not None:
+                return _latest_screen_data
+        time.sleep(retry_delay)
+
+    raise HTTPException(
+        status_code=503,
+        detail="Screen data is not yet available after multiple retries.",
+    )
 
 
 @app.get("/screen-info")
@@ -112,22 +118,27 @@ async def get_screen_info():
     return JSONResponse(content=data)
 
 
-@app.get("/health-check")
+@app.get("/health")
 async def health_check():
     """Check if the Maestro Studio server is healthy."""
-    health_url = f"{MAESTRO_STUDIO_API_URL}/banner-message"
+    health_url = f"{DEVICE_HARDWARE_BRIDGE_API_URL}/banner-message"
     try:
         response = requests.get(health_url, timeout=5)
         response.raise_for_status()
+        with _data_lock:
+            if _latest_screen_data is None:
+                raise HTTPException(
+                    status_code=503,
+                    detail="Screen data is not yet available after multiple retries.",
+                )
         return JSONResponse(content=response.json())
     except requests.exceptions.RequestException as e:
         raise HTTPException(status_code=503, detail=f"Maestro Studio not available: {e}")
 
 
 def start():
-    print("--- Starting Maestro Screen Server ---")
-    uvicorn.run(app, host="0.0.0.0", port=DEVICE_SCREEN_API_PORT)
-
-
-if __name__ == "__main__":
-    start()
+    if not is_port_in_use(server_settings.DEVICE_SCREEN_API_PORT):
+        uvicorn.run(app, host="0.0.0.0", port=server_settings.DEVICE_SCREEN_API_PORT)
+        return True
+    print(f"Device screen API is already running on port {server_settings.DEVICE_SCREEN_API_PORT}")
+    return False

@@ -8,6 +8,8 @@ from typing import Optional
 
 import requests
 
+from minitap.servers.utils import is_port_in_use
+
 MAESTRO_STUDIO_PORT = 9999
 DEVICE_HARDWARE_BRIDGE_PORT = MAESTRO_STUDIO_PORT
 
@@ -37,7 +39,7 @@ class DeviceHardwareBridge:
                 creation_flags = subprocess.CREATE_NO_WINDOW
 
             self.process = subprocess.Popen(
-                ["maestro", "studio"],
+                ["maestro", "studio", "--no-window"],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
@@ -125,6 +127,13 @@ class DeviceHardwareBridge:
             print(f"[Maestro Studio ERROR]: {line}")
             self.output.append(line)
 
+            if "device offline" in line.lower():
+                with self.lock:
+                    self.status = BridgeStatus.FAILED
+                if self.process:
+                    self.process.kill()
+                break
+
             if "address already in use" in line.lower():
                 with self.lock:
                     self.status = BridgeStatus.PORT_IN_USE
@@ -137,7 +146,7 @@ class DeviceHardwareBridge:
                         self.status = BridgeStatus.FAILED
 
     def _wait_for_health_check(self, retries=5, delay=2):
-        health_url = "http://localhost:9999/api/banner-message"
+        health_url = f"http://localhost:{DEVICE_HARDWARE_BRIDGE_PORT}/api/banner-message"
         for _ in range(retries):
             try:
                 response = requests.get(health_url, timeout=3)
@@ -150,19 +159,31 @@ class DeviceHardwareBridge:
         print("Health check failed after multiple retries.")
         return False
 
-    def start(self):
-        if self.status in [
+    def _should_start_maestro(self):
+        return self.status in [
             BridgeStatus.STOPPED,
             BridgeStatus.FAILED,
             BridgeStatus.NO_DEVICE,
             BridgeStatus.PORT_IN_USE,
-        ]:
+        ]
+
+    def start(self):
+        if is_port_in_use(DEVICE_HARDWARE_BRIDGE_PORT):
+            print("Maestro port already in use - assuming Maestro is running.")
+            self.status = BridgeStatus.RUNNING
+            return True
+        if self._should_start_maestro():
+            self.status = BridgeStatus.STARTING
             self.output.clear()
             self.thread = threading.Thread(target=self._run_maestro_studio, daemon=True)
             self.thread.start()
             return True
         print(f"Cannot start, current status is {self.status.value}")
         return False
+
+    def wait(self):
+        if self.thread:
+            self.thread.join()
 
     def stop(self):
         if self.process:
