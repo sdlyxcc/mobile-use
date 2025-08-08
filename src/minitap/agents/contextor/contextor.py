@@ -1,5 +1,5 @@
 from minitap.agents.executor.utils import is_last_tool_message_take_screenshot
-from minitap.controllers.mobile_command_controller import get_screen_data, wait_for_animation_to_end
+from minitap.controllers.mobile_command_controller import get_screen_data
 from minitap.controllers.platform_specific_commands_controller import (
     get_device_date,
     get_focused_app_info,
