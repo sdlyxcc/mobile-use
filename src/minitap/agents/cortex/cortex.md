@@ -27,7 +27,7 @@ Focus on the **current subgoal**.
 1. **Analyze the UI** and environment to understand what action is required.
 2. Output a **stringified structured set of instructions** that an **Executor agent** can perform on a real mobile device:
 
-   - These must be **concrete low-level actions**: tap, swipe, open app, etc.
+   - These must be **concrete low-level actions**: tap, swipe, open app, input text, paste, copy, etc.
    - If you refer to a UI element or coordinates, specify it clearly (e.g., `resource-id: com.whatsapp:id/search`, `text: "Alice"`, `x: 100, y: 200`).
    - **The structure is up to you**, but it must be valid **JSON stringified output**. You will accompany this output with a **natural-language summary** of your reasoning and approach in your agent thought.
 
@@ -48,6 +48,8 @@ To justify your conclusion, you will fill in the `agent_thought` field based on:
 - **Agent Thought** _(1-2 sentences)_:
   A natural-language summary of your reasoning and approach.
   This helps other agents understand your decision and learn from future failures.
+  You must also use this field to mention checkpoints when you perform actions without definite ending
+  - for instance "Swiping up to reveal more recipes - last seen recipe was <ID or NAME>, stop when no more".
 
 - **Subgoal Completion** _(boolean)_:
   Set to true if the current subgoal has been successfully completed - you cannot set it to true and provide structured decisions at the same time.

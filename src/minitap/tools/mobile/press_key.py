@@ -22,7 +22,7 @@ def press_key(
     has_failed = output is not None
     tool_message = ToolMessage(
         tool_call_id=tool_call_id,
-        content=press_key_wrapper.on_failure_fn()
+        content=press_key_wrapper.on_failure_fn(key)
         if has_failed
         else press_key_wrapper.on_success_fn(key),
         additional_kwargs={"error": output} if has_failed else {},
