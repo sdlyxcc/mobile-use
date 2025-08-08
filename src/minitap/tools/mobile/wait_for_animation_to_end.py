@@ -10,13 +10,14 @@ from minitap.controllers.mobile_command_controller import WaitTimeout
 from minitap.controllers.mobile_command_controller import (
     wait_for_animation_to_end as wait_for_animation_to_end_controller,
 )
-from minitap.tools.tool_wrapper import ToolWrapper
+from minitap.tools.tool_wrapper import ExecutorMetadata, ToolWrapper
 
 
 @tool
 def wait_for_animation_to_end(
     tool_call_id: Annotated[str, InjectedToolCallId],
     agent_thought: str,
+    executor_metadata: Optional[ExecutorMetadata],
     timeout: Optional[WaitTimeout],
 ):
     """
@@ -31,17 +32,24 @@ def wait_for_animation_to_end(
         - waitForAnimationToEnd: { timeout: 5000 }
     """
     output = wait_for_animation_to_end_controller(timeout=timeout)
+    has_failed = output is not None
+    tool_message = ToolMessage(
+        tool_call_id=tool_call_id,
+        content=wait_for_animation_to_end_wrapper.on_failure_fn()
+        if has_failed
+        else wait_for_animation_to_end_wrapper.on_success_fn(timeout),
+        additional_kwargs={"error": output} if has_failed else {},
+    )
     return Command(
-        update={
-            "agents_thoughts": [agent_thought],
-            "messages": [
-                ToolMessage(
-                    tool_call_id=tool_call_id,
-                    content=wait_for_animation_to_end_wrapper.on_success_fn(timeout),
-                    additional_kwargs={"output": output},
-                ),
-            ],
-        },
+        update=wait_for_animation_to_end_wrapper.handle_executor_state_fields(
+            executor_metadata=executor_metadata,
+            tool_message=tool_message,
+            is_failure=has_failed,
+            updates={
+                "agents_thoughts": [agent_thought],
+                "messages": [tool_message],
+            },
+        ),
     )
 
 

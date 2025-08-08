@@ -10,6 +10,7 @@ from langgraph.prebuilt import ToolNode
 
 from minitap.agents.contextor.contextor import contextor_node
 from minitap.agents.cortex.cortex import cortex_node
+from minitap.agents.executor.executor_context_cleaner import executor_context_cleaner_node
 from minitap.agents.executor.executor import executor_node
 from minitap.agents.orchestrator.orchestrator import orchestrator_node
 from minitap.agents.planner.planner import planner_node
@@ -70,6 +71,17 @@ def post_executor_gate(
     return "skip"
 
 
+def post_executor_tools_gate(
+    state: State,
+) -> Literal["continue", "failed", "done"]:
+    logger.info("Starting post_executor_tools_gate")
+    if state.executor_failed:
+        return "failed"
+    if state.executor_retrigger:
+        return "continue"
+    return "done"
+
+
 async def get_graph() -> CompiledStateGraph:
     graph_builder = StateGraph(State)
 
@@ -85,6 +97,7 @@ async def get_graph() -> CompiledStateGraph:
     executor_tool_node = ToolNode(get_tools_from_wrappers(EXECUTOR_WRAPPERS_TOOLS))
     graph_builder.add_node("executor_tools", executor_tool_node)
 
+    graph_builder.add_node("executor_context_cleaner", executor_context_cleaner_node)
     graph_builder.add_node("summarizer", summarizer_node)
 
     # Linking nodes
@@ -111,9 +124,18 @@ async def get_graph() -> CompiledStateGraph:
     graph_builder.add_conditional_edges(
         "executor",
         post_executor_gate,
-        {"invoke_tools": "executor_tools", "skip": "summarizer"},
+        {"invoke_tools": "executor_tools", "skip": "executor_context_cleaner"},
     )
-    graph_builder.add_edge("executor_tools", "summarizer")
+    graph_builder.add_conditional_edges(
+        "executor_tools",
+        post_executor_tools_gate,
+        {
+            "continue": "executor",
+            "done": "executor_context_cleaner",
+            "failed": "executor_context_cleaner",
+        },
+    )
+    graph_builder.add_edge("executor_context_cleaner", "summarizer")
     graph_builder.add_edge("summarizer", "contextor")
 
     return graph_builder.compile()

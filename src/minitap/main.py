@@ -170,6 +170,10 @@ async def run_automation(
         structured_decisions=None,
         agents_thoughts=[],
         remaining_steps=RECURSION_LIMIT,
+        executor_retrigger=False,
+        executor_failed=False,
+        executor_messages=[],
+        cortex_last_thought=None,
     ).model_dump()
 
     success = False

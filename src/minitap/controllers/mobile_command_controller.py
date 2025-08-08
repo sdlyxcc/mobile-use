@@ -8,6 +8,7 @@ from minitap.clients.screen_api_client import get_client as get_screen_api_clien
 from minitap.config import settings
 from minitap.utils.errors import ControllerErrors
 from minitap.utils.logger import get_logger
+from requests import JSONDecodeError
 import yaml
 
 screen_api = get_screen_api_client(settings.DEVICE_SCREEN_API_BASE_URL)
@@ -41,20 +42,32 @@ class RunFlowRequest(BaseModel):
     dry_run: bool = Field(default=False, alias="dryRun")
 
 
-def run_flow(yaml: str, dry_run: bool = False):
-    logger.info(f"Running flow: {yaml}")
-    payload = RunFlowRequest(yaml=yaml, dryRun=dry_run).model_dump(by_alias=True)
-    response = device_hardware_api.post("run-command", json=payload)
+def run_flow(flow_steps: list, dry_run: bool = False) -> Optional[dict]:
+    """
+    Run a flow i.e, a sequence of commands.
+    Returns None on success, or the response body of the failed command.
+    """
+    logger.info(f"Running flow: {flow_steps}")
 
-    if response.status_code == 200:
-        logger.success("Tool call completed")
-    else:
-        logger.error(f"Tool call failed with status code: {response.status_code}")
+    for step in flow_steps:
+        step_yml = yaml.dump(step)
+        payload = RunFlowRequest(yaml=step_yml, dryRun=dry_run).model_dump(by_alias=True)
+        response = device_hardware_api.post("run-command", json=payload)
 
-    json_response = response.json()
-    if isinstance(json_response, dict):
-        json_response = {k: v for k, v in json_response.items() if v is not None}
-    return json_response
+        try:
+            response_body = response.json()
+        except JSONDecodeError:
+            response_body = response.text
+
+        if isinstance(response_body, dict):
+            response_body = {k: v for k, v in response_body.items() if v is not None}
+
+        if response.status_code >= 300:
+            logger.error(f"Tool call failed with status code: {response.status_code}")
+            return {"status_code": response.status_code, "body": response_body}
+
+    logger.success("Tool call completed")
+    return None
 
 
 class CoordinatesSelectorRequest(BaseModel):
@@ -214,7 +227,7 @@ def swipe(swipe_request: SwipeRequest, dry_run: bool = False):
 
 
 def input_text(text: str, dry_run: bool = False):
-    return run_flow(f"inputText: {text}\n", dry_run=dry_run)
+    return run_flow([{"inputText": text}], dry_run=dry_run)
 
 
 def copy_text_from(selector_request: SelectorRequest, dry_run: bool = False):
@@ -223,12 +236,12 @@ def copy_text_from(selector_request: SelectorRequest, dry_run: bool = False):
         error = "Invalid copyTextFrom selector request, could not format yaml"
         logger.error(error)
         raise ControllerErrors(error)
-    flow_input = yaml.dump({"copyTextFrom": copy_text_from_body})
+    flow_input = [{"copyTextFrom": copy_text_from_body}]
     return run_flow(flow_input, dry_run=dry_run)
 
 
 def paste_text(dry_run: bool = False):
-    return run_flow("pasteText\n", dry_run=dry_run)
+    return run_flow(["pasteText"], dry_run=dry_run)
 
 
 def erase_text(nb_chars: Optional[int] = None, dry_run: bool = False):
@@ -237,8 +250,8 @@ def erase_text(nb_chars: Optional[int] = None, dry_run: bool = False):
     Removes 50 characters if nb_chars is not specified.
     """
     if nb_chars is None:
-        return run_flow("eraseText\n", dry_run=dry_run)
-    return run_flow(f"eraseText: {nb_chars}\n", dry_run=dry_run)
+        return run_flow(["eraseText"], dry_run=dry_run)
+    return run_flow([{"eraseText": nb_chars}], dry_run=dry_run)
 
 
 ##### App related commands #####
@@ -292,14 +305,13 @@ class WaitTimeout(Enum):
 
 def wait_for_animation_to_end(timeout: Optional[WaitTimeout] = None, dry_run: bool = False):
     if timeout is None:
-        return run_flow("waitForAnimationToEnd\n", dry_run=dry_run)
-    return run_flow(f"waitForAnimationToEnd:\n  timeout: {timeout.value}\n", dry_run=dry_run)
+        return run_flow(["waitForAnimationToEnd"], dry_run=dry_run)
+    return run_flow([{"waitForAnimationToEnd": {"timeout": timeout.value}}], dry_run=dry_run)
 
 
 def run_flow_with_wait_for_animation_to_end(base_flow: list, dry_run: bool = False):
     base_flow.append({"waitForAnimationToEnd": {"timeout": WaitTimeout.MEDIUM.value}})
-    flow = yaml.dump(base_flow)
-    return run_flow(flow, dry_run=dry_run)
+    return run_flow(base_flow, dry_run=dry_run)
 
 
 if __name__ == "__main__":

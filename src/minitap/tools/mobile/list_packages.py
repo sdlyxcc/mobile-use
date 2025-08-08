@@ -1,3 +1,4 @@
+from typing import Optional
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
@@ -10,13 +11,14 @@ from minitap.controllers.platform_specific_commands_controller import (
     list_packages as list_packages_command,
 )
 from minitap.graph.state import State
-from minitap.tools.tool_wrapper import ToolWrapper
+from minitap.tools.tool_wrapper import ExecutorMetadata, ToolWrapper
 
 
 @tool
 async def list_packages(
     tool_call_id: Annotated[str, InjectedToolCallId],
     agent_thought: str,
+    executor_metadata: Optional[ExecutorMetadata],
     state: Annotated[State, InjectedState],
 ) -> Command:
     """
@@ -24,6 +26,7 @@ async def list_packages(
     Outputs the full package names list (android) or bundle ids list (IOS).
     """
     output: str = list_packages_command()
+    has_failed = False
 
     try:
         hopper_output: HopperOutput = await hopper(
@@ -31,34 +34,33 @@ async def list_packages(
             messages=state.messages,
             data=output,
         )
+        tool_message = ToolMessage(
+            tool_call_id=tool_call_id,
+            content=list_packages_wrapper.on_success_fn()
+            + ": "
+            + hopper_output.step
+            + ": "
+            + hopper_output.output,
+        )
     except Exception as e:
         print("Failed to extract insights from data: " + str(e))
-        return Command(
-            update={
-                "agents_thoughts": [agent_thought],
-                "messages": [
-                    ToolMessage(
-                        content=list_packages_wrapper.on_failure_fn(),
-                        tool_call_id=tool_call_id,
-                        additional_kwargs={"output": output},
-                    ),
-                ],
-            },
+        tool_message = ToolMessage(
+            tool_call_id=tool_call_id,
+            content=list_packages_wrapper.on_failure_fn(),
+            additional_kwargs={"output": output},
         )
+        has_failed = True
 
     return Command(
-        update={
-            "messages": [
-                ToolMessage(
-                    content=list_packages_wrapper.on_success_fn()
-                    + ": "
-                    + hopper_output.step
-                    + ": "
-                    + hopper_output.output,
-                    tool_call_id=tool_call_id,
-                ),
-            ],
-        },
+        update=list_packages_wrapper.handle_executor_state_fields(
+            executor_metadata=executor_metadata,
+            tool_message=tool_message,
+            is_failure=has_failed,
+            updates={
+                "agents_thoughts": [agent_thought],
+                "messages": [tool_message],
+            },
+        ),
     )
 
 

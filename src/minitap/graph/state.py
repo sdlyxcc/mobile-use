@@ -1,6 +1,7 @@
 from typing import Union
 
-from langchain_core.messages import AIMessage
+from langchain_core.messages import AIMessage, AnyMessage
+from langgraph.graph import add_messages
 from langgraph.prebuilt.chat_agent_executor import AgentStatePydantic
 from typing_extensions import Annotated, Optional
 
@@ -45,6 +46,12 @@ class State(AgentStatePydantic):
         "Structured decisions made by the cortex, for the executor to follow",
         take_last,
     ]
+
+    # executor related keys
+    executor_retrigger: Annotated[Optional[bool], "Whether the executor must be retriggered"]
+    executor_failed: Annotated[bool, "Whether a tool call made by the executor failed"]
+    executor_messages: Annotated[list[AnyMessage], "Sequential Executor messages", add_messages]
+    cortex_last_thought: Annotated[Optional[str], "Last thought of the cortex for the executor"]
 
     # common keys
     agents_thoughts: Annotated[
