@@ -55,7 +55,12 @@ async def outputter(output_config: OutputConfig, graph_output: State) -> dict:
 
     response = await structured_llm.ainvoke(messages)  # type: ignore
     if isinstance(response, BaseModel):
-        response = response.model_dump()
+        if output_config.output_description and hasattr(response, "content"):
+            response = json.loads(response.content)  # type: ignore
+            return response
+        return response.model_dump()
     elif hasattr(response, "content"):
-        response = json.loads(response.content)  # type: ignore
+        return json.loads(response.content)  # type: ignore
+    else:
+        logger.info("Found unknown response type: " + str(type(response)))
     return response
