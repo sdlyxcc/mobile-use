@@ -49,6 +49,9 @@ To justify your conclusion, you will fill in the `agent_thought` field based on:
   A natural-language summary of your reasoning and approach.
   This helps other agents understand your decision and learn from future failures.
 
+- **Subgoal Completion** _(boolean)_:
+  Set to true if the current subgoal has been successfully completed - you cannot set it to true and provide structured decisions at the same time.
+
 ---
 
 ### Example

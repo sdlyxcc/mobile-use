@@ -2,6 +2,7 @@ from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langgraph.types import Command
+from typing import Optional
 from pydantic import Field
 from typing_extensions import Annotated
 
@@ -9,13 +10,14 @@ from minitap.controllers.mobile_command_controller import SelectorRequest
 from minitap.controllers.mobile_command_controller import (
     copy_text_from as copy_text_from_controller,
 )
-from minitap.tools.tool_wrapper import ToolWrapper
+from minitap.tools.tool_wrapper import ExecutorMetadata, ToolWrapper
 
 
 @tool
 def copy_text_from(
     tool_call_id: Annotated[str, InjectedToolCallId],
     agent_thought: str,
+    executor_metadata: Optional[ExecutorMetadata],
     selector_request: SelectorRequest = Field(..., description="The selector to copy text from"),
 ):
     """
@@ -34,17 +36,24 @@ def copy_text_from(
     See the Selectors documentation for supported selector types.
     """
     output = copy_text_from_controller(selector_request=selector_request)
+    has_failed = output is not None
+    tool_message = ToolMessage(
+        tool_call_id=tool_call_id,
+        content=copy_text_from_wrapper.on_failure_fn()
+        if has_failed
+        else copy_text_from_wrapper.on_success_fn(selector_request),
+        additional_kwargs={"error": output} if has_failed else {},
+    )
     return Command(
-        update={
-            "agents_thoughts": [agent_thought],
-            "messages": [
-                ToolMessage(
-                    tool_call_id=tool_call_id,
-                    content=copy_text_from_wrapper.on_success_fn(selector_request),
-                    additional_kwargs={"output": output},
-                ),
-            ],
-        },
+        update=copy_text_from_wrapper.handle_executor_state_fields(
+            executor_metadata=executor_metadata,
+            tool_message=tool_message,
+            is_failure=has_failed,
+            updates={
+                "agents_thoughts": [agent_thought],
+                "messages": [tool_message],
+            },
+        ),
     )
 
 

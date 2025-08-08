@@ -1,5 +1,4 @@
 from pathlib import Path
-
 from jinja2 import Template
 from langchain_core.messages import HumanMessage, SystemMessage
 
@@ -29,23 +28,26 @@ async def executor_node(state: State):
 
     system_message = Template(
         Path(__file__).parent.joinpath("executor.md").read_text(encoding="utf-8")
-    ).render(
-        platform=device_context.mobile_platform,
+    ).render(platform=device_context.mobile_platform)
+    cortex_last_thought = (
+        state.cortex_last_thought if state.cortex_last_thought else state.agents_thoughts[-1]
     )
-    last_thought = state.agents_thoughts[-1]
     messages = [
         SystemMessage(content=system_message),
-        HumanMessage(content=last_thought),
+        HumanMessage(content=cortex_last_thought),
         HumanMessage(content=structured_decisions),
+        *state.executor_messages,
     ]
 
     llm = get_llm(agent_node="executor").bind_tools(
         tools=get_tools_from_wrappers(EXECUTOR_WRAPPERS_TOOLS),
         tool_choice="auto",
+        parallel_tool_calls=False,
     )
     response = await llm.ainvoke(messages)
 
     return {
+        "cortex_last_thought": cortex_last_thought,
+        "executor_messages": [response],
         "messages": [response],
-        "structured_decisions": None,
     }

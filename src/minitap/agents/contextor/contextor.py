@@ -1,5 +1,5 @@
 from minitap.agents.executor.utils import is_last_tool_message_take_screenshot
-from minitap.controllers.mobile_command_controller import get_screen_data, wait_for_animation_to_end
+from minitap.controllers.mobile_command_controller import get_screen_data
 from minitap.controllers.platform_specific_commands_controller import (
     get_device_date,
     get_focused_app_info,
@@ -17,7 +17,6 @@ logger = get_logger(__name__)
     on_failure=lambda _: logger.error("Contextor Agent"),
 )
 def contextor_node(state: State):
-    wait_for_animation_to_end()
     device_data = get_screen_data()
     focused_app_info = get_focused_app_info()
     device_date = get_device_date()

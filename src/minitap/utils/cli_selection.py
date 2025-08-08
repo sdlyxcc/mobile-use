@@ -110,7 +110,7 @@ def _select_from_list(
 
 def _numbered_selection(console: Console, item_type: str, choices: List[str], default: str) -> str:
     """Fallback numbered selection when arrow keys aren't available."""
-    choices_text = "\n".join([f"  {i+1}. {choice}" for i, choice in enumerate(choices)])
+    choices_text = "\n".join([f"  {i + 1}. {choice}" for i, choice in enumerate(choices)])
     console.print(f"Available {item_type}s:\n{choices_text}")
 
     default_idx = choices.index(default) + 1 if default in choices else 1
