@@ -48,6 +48,8 @@ To justify your conclusion, you will fill in the `agent_thought` field based on:
 - **Agent Thought** _(1-2 sentences)_:
   A natural-language summary of your reasoning and approach.
   This helps other agents understand your decision and learn from future failures.
+  You must also use this field to mention checkpoints when you perform actions without definite ending
+  - for instance "Swiping up to reveal more recipes - last seen recipe was <ID or NAME>, stop when no more".
 
 - **Subgoal Completion** _(boolean)_:
   Set to true if the current subgoal has been successfully completed - you cannot set it to true and provide structured decisions at the same time.

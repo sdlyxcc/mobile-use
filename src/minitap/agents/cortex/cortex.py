@@ -63,7 +63,7 @@ async def cortex_node(state: State):
 
     return {
         "agents_thoughts": [response.agent_thought],
-        "structured_decisions": None if response.complete_current_subgoal else response.decisions,
+        "structured_decisions": response.decisions if response.decisions else None,
         "latest_screenshot_base64": None,
         "latest_ui_hierarchy": None,
         "focused_app_info": None,
