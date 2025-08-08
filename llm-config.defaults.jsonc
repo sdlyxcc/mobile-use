@@ -3,19 +3,19 @@
   "default": {
     "planner": {
       "provider": "openai",
-      "model": "gpt-4.1"
+      "model": "gpt-5-mini"
     },
     "orchestrator": {
       "provider": "openai",
-      "model": "gpt-4.1"
+      "model": "gpt-5-mini"
     },
     "cortex": {
       "provider": "openai",
-      "model": "o3"
+      "model": "gpt-5"
     },
     "executor": {
       "provider": "openai",
-      "model": "gpt-4.1"
+      "model": "gpt-5"
     }
   },
   // This is the config we recommend.
@@ -31,11 +31,11 @@
     },
     "cortex": {
       "provider": "openai",
-      "model": "o3"
+      "model": "gpt-5"
     },
     "executor": {
       "provider": "openai",
-      "model": "gpt-4.1"
+      "model": "gpt-5"
     }
   }
 }
