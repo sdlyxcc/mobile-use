@@ -161,6 +161,8 @@ async def run_automation(
         set_execution_setup(trace_id)
 
     logger.info(f"Starting graph with goal: `{goal}`")
+    if output_config and output_config.needs_structured_format():
+        logger.info(str(output_config))
     graph_input = State(
         messages=[],
         initial_goal=goal,
@@ -177,16 +179,18 @@ async def run_automation(
     success = False
     try:
         logger.info(f"Invoking graph with input: {graph_input}")
-        result: State = await (await get_graph()).ainvoke(
+        result = await (await get_graph()).ainvoke(
             input=graph_input,
             config={
                 "recursion_limit": RECURSION_LIMIT,
                 "callbacks": graph_config_callbacks,
             },
         )  # type: ignore
+        result: State = State(**result)  # type: ignore
 
         print_ai_response_to_stderr(graph_result=result)
         if output_config and output_config.needs_structured_format():
+            logger.info("Generating structured output...")
             try:
                 structured_output = await outputter(
                     output_config=output_config, graph_output=result
@@ -195,7 +199,7 @@ async def run_automation(
                 logger.error(f"Failed to generate structured output: {e}")
                 structured_output = None
 
-        logger.info("✅ Test is success ✅")
+        logger.info("✅ Automation is success ✅")
         success = True
     except Exception as e:
         logger.info(f"❌ Test failed with error: {e} ❌")
