@@ -27,7 +27,7 @@ Focus on the **current subgoal**.
 1. **Analyze the UI** and environment to understand what action is required.
 2. Output a **stringified structured set of instructions** that an **Executor agent** can perform on a real mobile device:
 
-   - These must be **concrete low-level actions**: tap, swipe, open app, etc.
+   - These must be **concrete low-level actions**: tap, swipe, open app, input text, paste, copy, etc.
    - If you refer to a UI element or coordinates, specify it clearly (e.g., `resource-id: com.whatsapp:id/search`, `text: "Alice"`, `x: 100, y: 200`).
    - **The structure is up to you**, but it must be valid **JSON stringified output**. You will accompany this output with a **natural-language summary** of your reasoning and approach in your agent thought.
 
