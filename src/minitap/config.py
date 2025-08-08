@@ -171,6 +171,19 @@ class OutputConfig(BaseModel):
         ),
     ]
 
+    def __str__(self):
+        s_builder = ""
+        if self.structured_output:
+            s_builder += f"Structured Output: {self.structured_output}\n"
+        if self.output_description:
+            s_builder += f"Output Description: {self.output_description}\n"
+        if self.output_description and self.structured_output:
+            s_builder += (
+                "Both 'structured_output' and 'output_description' are provided. "
+                "'structured_output' will take precedence.\n"
+            )
+        return s_builder
+
     @model_validator(mode="after")
     def warn_if_both_outputs_provided(self):
         if self.structured_output and self.output_description:
