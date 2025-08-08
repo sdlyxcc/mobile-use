@@ -38,7 +38,7 @@ def input_text(
     has_failed = output is not None
     tool_message = ToolMessage(
         tool_call_id=tool_call_id,
-        content=input_text_wrapper.on_failure_fn()
+        content=input_text_wrapper.on_failure_fn(text)
         if has_failed
         else input_text_wrapper.on_success_fn(text),
         additional_kwargs={"error": output} if has_failed else {},

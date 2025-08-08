@@ -27,7 +27,7 @@ def tap(
     has_failed = output is not None
     tool_message = ToolMessage(
         tool_call_id=tool_call_id,
-        content=tap_wrapper.on_failure_fn()
+        content=tap_wrapper.on_failure_fn(selector_request, index)
         if has_failed
         else tap_wrapper.on_success_fn(selector_request, index),
         additional_kwargs={"error": output} if has_failed else {},
