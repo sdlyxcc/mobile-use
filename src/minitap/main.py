@@ -4,14 +4,15 @@ import platform
 import sys
 import time
 from pathlib import Path
-from typing import Any, Optional
+from typing import Optional
 
 import typer
 from langchain_core.messages import AIMessage
 from rich.console import Console
 from typing_extensions import Annotated
 
-from minitap.config import initialize_llm_config
+from minitap.agents.outputter.outputter import outputter
+from minitap.config import OutputConfig, initialize_llm_config, settings
 from minitap.constants import (
     RECURSION_LIMIT,
 )
@@ -24,8 +25,8 @@ from minitap.llm_config_context import LLMConfigContext, set_llm_config_context
 from minitap.servers.device_hardware_bridge import BridgeStatus
 from minitap.servers.start_servers import (
     check_device_screen_api_health,
-    start_device_screen_api,
     start_device_hardware_bridge,
+    start_device_screen_api,
 )
 from minitap.utils.cli_helpers import display_device_status
 from minitap.utils.logger import get_logger
@@ -36,14 +37,13 @@ from minitap.utils.media import (
     remove_steps_json_from_trace_folder,
 )
 from minitap.utils.time import convert_timestamp_to_str
-from minitap.config import settings
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
 logger = get_logger(__name__)
 
 
-def print_ai_response_to_stderr(graph_result: dict[str, Any]):
-    for msg in reversed(graph_result["messages"]):
+def print_ai_response_to_stderr(graph_result: State):
+    for msg in reversed(graph_result.messages):
         if isinstance(msg, AIMessage):
             print(msg.content, file=sys.stderr)
             return
@@ -113,6 +113,7 @@ async def run_automation(
     test_name: Optional[str] = None,
     traces_output_path_str: str = "traces",
     graph_config_callbacks: Optional[list] = [],
+    output_config: Optional[OutputConfig] = None,
 ):
     device_id: str | None = None
 
@@ -147,6 +148,7 @@ async def run_automation(
     trace_id: str | None = None
     traces_temp_path: Path | None = None
     traces_output_path: Path | None = None
+    structured_output: dict | None = None
 
     if test_name:
         traces_output_path = Path(traces_output_path_str).resolve()
@@ -159,6 +161,8 @@ async def run_automation(
         set_execution_setup(trace_id)
 
     logger.info(f"Starting graph with goal: `{goal}`")
+    if output_config and output_config.needs_structured_format():
+        logger.info(str(output_config))
     graph_input = State(
         messages=[],
         initial_goal=goal,
@@ -181,11 +185,21 @@ async def run_automation(
                 "recursion_limit": RECURSION_LIMIT,
                 "callbacks": graph_config_callbacks,
             },
-        )
+        )  # type: ignore
+        result: State = State(**result)  # type: ignore
 
         print_ai_response_to_stderr(graph_result=result)
+        if output_config and output_config.needs_structured_format():
+            logger.info("Generating structured output...")
+            try:
+                structured_output = await outputter(
+                    output_config=output_config, graph_output=result
+                )
+            except Exception as e:
+                logger.error(f"Failed to generate structured output: {e}")
+                structured_output = None
 
-        logger.info("✅ Test is success ✅")
+        logger.info("✅ Automation is success ✅")
         success = True
     except Exception as e:
         logger.info(f"❌ Test failed with error: {e} ❌")
@@ -205,11 +219,18 @@ async def run_automation(
             remove_steps_json_from_trace_folder(traces_temp_path)
             logger.info("📽️ Trace compiled, moving to output path 📽️")
 
-            # moving all the content that is inside the traces folder into the new path
             output_folder_path = traces_temp_path.rename(traces_output_path / new_name)
             logger.info(f"📂✅ Trace folder renamed to: {output_folder_path.name}")
 
         await asyncio.sleep(1)
+    if structured_output:
+        logger.info(f"Structured output: {structured_output}")
+        return structured_output
+    if result.messages and isinstance(result.messages[-1], AIMessage):
+        result = result.messages[-1].content  # type: ignore
+        logger.info(str(result))
+        return result
+    return None
 
 
 @app.command()

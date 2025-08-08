@@ -1,9 +1,9 @@
 import os
 from pathlib import Path
-from typing import Literal, Optional, cast
+from typing import Annotated, Literal, Optional, Union, cast
 
 from dotenv import load_dotenv
-from pydantic import BaseModel, SecretStr, ValidationError
+from pydantic import BaseModel, Field, SecretStr, ValidationError, model_validator
 from pydantic_settings import BaseSettings
 
 from minitap.utils.file import load_jsonc
@@ -143,3 +143,58 @@ def initialize_llm_config() -> LLMConfig:
     validate_llm_config(llm_config)
     logger.success("LLM config initialized")
     return llm_config
+
+
+### Output config
+
+
+class OutputConfig(BaseModel):
+    structured_output: Annotated[
+        Optional[Union[type[BaseModel], dict]],
+        Field(
+            default=None,
+            description=(
+                "Optional structured schema (as a BaseModel or dict) to shape the output. "
+                "If provided, it takes precedence over 'output_description'."
+            ),
+        ),
+    ]
+    output_description: Annotated[
+        Optional[str],
+        Field(
+            default=None,
+            description=(
+                "Optional natural language description of the expected output format. "
+                "Used only if 'structured_output' is not provided. "
+                "Example: 'Output a JSON with 3 keys: color, price, websiteUrl'."
+            ),
+        ),
+    ]
+
+    def __str__(self):
+        s_builder = ""
+        if self.structured_output:
+            s_builder += f"Structured Output: {self.structured_output}\n"
+        if self.output_description:
+            s_builder += f"Output Description: {self.output_description}\n"
+        if self.output_description and self.structured_output:
+            s_builder += (
+                "Both 'structured_output' and 'output_description' are provided. "
+                "'structured_output' will take precedence.\n"
+            )
+        return s_builder
+
+    @model_validator(mode="after")
+    def warn_if_both_outputs_provided(self):
+        if self.structured_output and self.output_description:
+            import warnings
+
+            warnings.warn(
+                "Both 'structured_output' and 'output_description' are provided. "
+                "'structured_output' will take precedence.",
+                stacklevel=2,
+            )
+        return self
+
+    def needs_structured_format(self):
+        return self.structured_output or self.output_description
