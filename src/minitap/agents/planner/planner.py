@@ -49,6 +49,8 @@ async def planner_node(state: State):
         )
         for subgoal in response.subgoals
     ]
+    logger.info("📜 Generated plan:")
+    logger.info("\n".join(str(s) for s in subgoals_plan))
 
     return {
         "messages": [AIMessage(content="A new plan has been generated.")],

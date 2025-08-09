@@ -181,16 +181,33 @@ async def run_automation(
     ).model_dump()
 
     success = False
+    last_state: State | None = None
+    result: State | None = None
+    agents_thoughts: set[str] = set()
     try:
         logger.info(f"Invoking graph with input: {graph_input}")
-        result = await (await get_graph()).ainvoke(
+        async for chunk in (await get_graph()).astream(
             input=graph_input,
             config={
                 "recursion_limit": RECURSION_LIMIT,
                 "callbacks": graph_config_callbacks,
             },
-        )  # type: ignore
-        result: State = State(**result)  # type: ignore
+            stream_mode=["messages", "custom", "values"],
+        ):
+            stream_mode, content = chunk
+            if stream_mode == "values":
+                last_state = content  # type: ignore
+                result = State(**last_state)  # type: ignore
+                last_agents_thoughts = (
+                    result.agents_thoughts[-1] if result.agents_thoughts else None
+                )
+                if last_agents_thoughts:
+                    if last_agents_thoughts not in agents_thoughts:
+                        logger.info(f"💭 {last_agents_thoughts}")
+                        agents_thoughts.add(last_agents_thoughts)
+        if not result:
+            logger.warning("No result received from graph")
+            return
 
         print_ai_response_to_stderr(graph_result=result)
         if output_config and output_config.needs_structured_format():

@@ -11,7 +11,7 @@ init(autoreset=True)
 
 class LogLevel(Enum):
     DEBUG = ("DEBUG", Fore.MAGENTA, "🔍")
-    INFO = ("INFO", Fore.BLUE, "ℹ")
+    INFO = ("INFO", Fore.WHITE, "ℹ")
     SUCCESS = ("SUCCESS", Fore.GREEN, "✓")
     WARNING = ("WARNING", Fore.YELLOW, "⚠")
     ERROR = ("ERROR", Fore.RED, "❌")
