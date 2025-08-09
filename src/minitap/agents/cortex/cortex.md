@@ -46,9 +46,11 @@ To justify your conclusion, you will fill in the `agent_thought` field based on:
   A **valid stringified JSON** describing what should be executed **right now** to advance the current subgoal.
 
 - **Agent Thought** _(1-2 sentences)_:
-  A natural-language summary of your reasoning and approach.
-  This helps other agents understand your decision and learn from future failures.
+  If there is any information you need to remember for later steps, you must include it here, because only the agent thoughts will be used to produce the final structured output.
+
+  This also helps other agents understand your decision and learn from future failures.
   You must also use this field to mention checkpoints when you perform actions without definite ending
+
   - for instance "Swiping up to reveal more recipes - last seen recipe was <ID or NAME>, stop when no more".
 
 - **Subgoal Completion** _(boolean)_:
