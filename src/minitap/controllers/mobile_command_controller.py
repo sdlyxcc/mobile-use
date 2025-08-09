@@ -87,8 +87,8 @@ class PercentagesSelectorRequest(BaseModel):
     50%,50%      # center
     """
 
-    x_percent: float
-    y_percent: float
+    x_percent: int
+    y_percent: int
 
     def to_str(self):
         return f"{self.x_percent}%, {self.y_percent}%"
