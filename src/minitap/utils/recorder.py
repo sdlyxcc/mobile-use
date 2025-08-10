@@ -36,6 +36,7 @@ def record_interaction(response: BaseMessage):
         with open(
             folder.joinpath(f"{int(timestamp)}.json").resolve(),
             "w",
+            encoding="utf-8",
         ) as f:
             f.write(response.model_dump_json())
     except Exception as e:
