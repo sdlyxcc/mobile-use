@@ -2,8 +2,15 @@ import json
 from pathlib import Path
 
 from jinja2 import Template
-from langchain_core.messages import AIMessage, HumanMessage, SystemMessage
+from langchain_core.messages import (
+    AIMessage,
+    HumanMessage,
+    RemoveMessage,
+    SystemMessage,
+    ToolMessage,
+)
 
+from langgraph.graph.message import REMOVE_ALL_MESSAGES
 from minitap.agents.cortex.types import CortexOutput
 from minitap.agents.planner.utils import get_current_subgoal
 from minitap.context import get_device_context
@@ -23,6 +30,7 @@ logger = get_logger(__name__)
 )
 async def cortex_node(state: State):
     device_context = get_device_context()
+    executor_feedback = get_executor_agent_feedback(state)
 
     system_message = Template(
         Path(__file__).parent.joinpath("cortex.md").read_text(encoding="utf-8")
@@ -32,6 +40,7 @@ async def cortex_node(state: State):
         subgoal_plan=state.subgoal_plan,
         current_subgoal=get_current_subgoal(state.subgoal_plan),
         agents_thoughts=state.agents_thoughts,
+        executor_feedback=executor_feedback,
     )
     messages = [
         SystemMessage(content=system_message),
@@ -61,11 +70,26 @@ async def cortex_node(state: State):
     llm = llm.with_structured_output(CortexOutput)
     response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
 
+    is_subgoal_completed = response.complete_current_subgoal
     return {
         "agents_thoughts": [response.agent_thought],
-        "structured_decisions": response.decisions if response.decisions else None,
+        "structured_decisions": response.decisions if not is_subgoal_completed else None,
         "latest_screenshot_base64": None,
         "latest_ui_hierarchy": None,
         "focused_app_info": None,
         "device_date": None,
+        # Executor related fields
+        "executor_messages": [RemoveMessage(id=REMOVE_ALL_MESSAGES)],
+        "cortex_last_thought": response.agent_thought,
     }
+
+
+def get_executor_agent_feedback(state: State) -> str:
+    if state.structured_decisions is None:
+        return "None."
+    executor_tool_messages = [m for m in state.executor_messages if isinstance(m, ToolMessage)]
+    return (
+        f"Latest UI decisions:\n{state.structured_decisions}"
+        + "\n\n"
+        + f"Executor feedback:\n{executor_tool_messages}"
+    )

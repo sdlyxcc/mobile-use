@@ -2,6 +2,7 @@ from pathlib import Path
 from jinja2 import Template
 from langchain_core.messages import HumanMessage, SystemMessage
 
+from langchain_core.messages.ai import AIMessage
 from minitap.context import get_device_context
 from minitap.graph.state import State
 from minitap.services.llm import get_llm
@@ -25,6 +26,15 @@ async def executor_node(state: State):
             "agent_thought": ["No structured decisions found, I cannot execute anything."],
         }
     device_context = get_device_context()
+
+    if len(state.executor_messages) > 0 and isinstance(state.executor_messages[-1], AIMessage):
+        if len(state.executor_messages[-1].tool_calls) > 0:  # type: ignore
+            # A previous tool call raised an uncaught exception while retrigerring the executor
+            return {
+                "executor_retrigger": False,
+                "executor_failed": True,
+                "executor_messages": [state.messages[-1]],
+            }
 
     system_message = Template(
         Path(__file__).parent.joinpath("executor.md").read_text(encoding="utf-8")
