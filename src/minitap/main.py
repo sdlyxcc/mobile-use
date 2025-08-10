@@ -273,13 +273,29 @@ def main(
             help="The path to save the traces.",
         ),
     ] = "traces",
+    output_description: Annotated[
+        Optional[str],
+        typer.Option(
+            "--output-description",
+            "-o",
+            help=(
+                """
+                A dict output description for the agent.
+                Ex: a JSON schema with 2 keys: type, price
+                """
+            ),
+        ),
+    ] = None,
 ):
     """
     Run the Minitap agent to automate tasks on a mobile device.
     """
     console = Console()
     display_device_status(console)
-    asyncio.run(run_automation(goal, test_name, traces_path))
+    output_config = None
+    if output_description:
+        output_config = OutputConfig(output_description=output_description, structured_output=None)
+    asyncio.run(run_automation(goal, test_name, traces_path, output_config=output_config))
 
 
 def cli():
