@@ -31,6 +31,7 @@ Each subgoal should be:
 - Focused on **realistic mobile interactions**
 - Neither too vague nor too granular
 - Sequential (later steps may depend on earlier ones)
+- Don't use loop-like formulation unless necessary (e.g. don't say "repeat this X times", instead reuse the same steps X times as subgoals)
 
 ### Examples
 

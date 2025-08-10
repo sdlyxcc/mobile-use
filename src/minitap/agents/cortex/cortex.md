@@ -21,6 +21,7 @@ You are provided with:
   - The **subgoal plan** with their statuses
   - The **current subgoal** to act on (the one in `PENDING` in the plan)
   - A list of **agent thoughts** (previous reasoning, observations about the environment)
+  - **Executor agent feedback** on the latest UI decisions
 
 ### Your Mission:
 
@@ -36,6 +37,8 @@ Focus on the **current subgoal**.
    - These must be **concrete low-level actions**: back,tap, swipe, launch app, list packages, close app, input text, paste, erase, text, copy, etc.
    - If you refer to a UI element or coordinates, specify it clearly (e.g., `resource-id: com.whatsapp:id/search`, `text: "Alice"`, `x: 100, y: 200`).
    - **The structure is up to you**, but it must be valid **JSON stringified output**. You will accompany this output with a **natural-language summary** of your reasoning and approach in your agent thought.
+   - When you want to launch/stop an app, prefer using its package name.
+   - **Only reference UI element IDs or visible texts that are explicitly present in the provided UI hierarchy or screenshot. Do not invent, infer, or guess any IDs or texts that are not directly observed**.
 
 
 ### Output
@@ -50,7 +53,7 @@ Focus on the **current subgoal**.
   You must also use this field to mention checkpoints when you perform actions without definite ending: for instance "Swiping up to reveal more recipes - last seen recipe was <ID or NAME>, stop when no more".
 
 - **Subgoal Completion** _(boolean)_:
-  Set to true if the current subgoal has been successfully completed - you **cannot set it to true and provide structured decisions at the same time**.
+  Set to true if the current subgoal has been successfully completed - you **cannot set it to true and provide structured decisions at the same time**. You must base your decision ONLY on what you have as input (device state, agent thoughts, executor feedback, etc) - NEVER based on the decisions you have produced.
 
 ---
 
@@ -83,3 +86,7 @@ Focus on the **current subgoal**.
 
 **Agent thoughts (previous reasoning, observations about the environment):**
 {{ agents_thoughts }}
+
+**Executor agent feedback on latest UI decisions:**
+
+{{ executor_feedback }}
