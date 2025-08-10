@@ -1,0 +1,58 @@
+name: Push image to GCP Docker Registry
+
+on:
+  push:
+    branches:
+      - main
+      - development
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  push_to_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - uses: minitap-ai/devops-common/.github/actions/gcp-docker-build-push@v1
+        with:
+          gcp-credentials: ${{ secrets.GCP_SA_KEY }}
+          gcp-project-id: ${{ vars.GCP_PROJECT_ID }}
+          gcp-region: ${{ vars.GCP_REGION }}
+          gcp-artifact-repo: ${{ vars.GCP_ARTIFACT_REPO }}
+          github-token: ${{ secrets.GH_PAT }}
+          image-name: ${{ vars.IMAGE_NAME }}
+          dockerfile: ${{ github.workspace }}/Dockerfile
+
+  push_slim_to_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - uses: minitap-ai/devops-common/.github/actions/gcp-docker-build-push@v1
+        with:
+          gcp-credentials: ${{ secrets.GCP_SA_KEY }}
+          gcp-project-id: ${{ vars.GCP_PROJECT_ID }}
+          gcp-region: ${{ vars.GCP_REGION }}
+          gcp-artifact-repo: ${{ vars.GCP_ARTIFACT_REPO }}
+          github-token: ${{ secrets.GH_PAT }}
+          image-name: ${{ vars.IMAGE_NAME }}-slim
+          dockerfile: ${{ github.workspace }}/slim.Dockerfile
+
+  push_servers_to_docker:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Clone the repository
+        uses: actions/checkout@v4
+
+      - uses: minitap-ai/devops-common/.github/actions/gcp-docker-build-push@v1
+        with:
+          gcp-credentials: ${{ secrets.GCP_SA_KEY }}
+          gcp-project-id: ${{ vars.GCP_PROJECT_ID }}
+          gcp-region: ${{ vars.GCP_REGION }}
+          gcp-artifact-repo: ${{ vars.GCP_ARTIFACT_REPO }}
+          github-token: ${{ secrets.GH_PAT }}
+          image-name: ${{ vars.IMAGE_NAME }}-servers
+          dockerfile: ${{ github.workspace }}/servers.Dockerfile
