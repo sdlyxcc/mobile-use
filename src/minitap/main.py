@@ -12,7 +12,13 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 from minitap.agents.outputter.outputter import outputter
-from minitap.config import OutputConfig, initialize_llm_config, settings
+from minitap.config import (
+    OutputConfig,
+    initialize_llm_config,
+    prepare_output_files,
+    record_events,
+    settings,
+)
 from minitap.constants import (
     RECURSION_LIMIT,
 )
@@ -116,6 +122,7 @@ async def run_automation(
     output_config: Optional[OutputConfig] = None,
 ):
     device_id: str | None = None
+    events_output_path, results_output_path = prepare_output_files()
 
     logger.info("⚙️ Starting Mobile-use servers...")
     device_id, success = run_servers()
@@ -205,6 +212,7 @@ async def run_automation(
                     if last_agents_thoughts not in agents_thoughts:
                         logger.info(f"💭 {last_agents_thoughts}")
                         agents_thoughts.add(last_agents_thoughts)
+                        record_events(output_path=events_output_path, events=list(agents_thoughts))
         if not result:
             logger.warning("No result received from graph")
             return
@@ -246,10 +254,12 @@ async def run_automation(
         await asyncio.sleep(1)
     if structured_output:
         logger.info(f"Structured output: {structured_output}")
+        record_events(output_path=results_output_path, events=structured_output)
         return structured_output
     if result.messages and isinstance(result.messages[-1], AIMessage):
         result = result.messages[-1].content  # type: ignore
         logger.info(str(result))
+        record_events(output_path=results_output_path, events=result)
         return result
     return None
 
