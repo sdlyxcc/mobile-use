@@ -1,6 +1,7 @@
+import json
 import os
 from pathlib import Path
-from typing import Annotated, Literal, Optional, Union, cast
+from typing import Annotated, Any, Literal, Optional, Union, cast
 
 from dotenv import load_dotenv
 from pydantic import BaseModel, Field, SecretStr, ValidationError, model_validator
@@ -28,6 +29,57 @@ class Settings(BaseSettings):
 
 
 settings = Settings()
+
+
+def prepare_output_files() -> tuple[str | None, str | None]:
+    events_output_path = os.getenv("EVENTS_OUTPUT_PATH") or None
+    results_output_path = os.getenv("RESULTS_OUTPUT_PATH") or None
+
+    def validate_and_prepare_file(file_path: str) -> str | None:
+        if not file_path:
+            return None
+
+        path_obj = Path(file_path)
+
+        if path_obj.exists() and path_obj.is_dir():
+            logger.error(f"Error: Path '{file_path}' points to an existing directory, not a file.")
+            return None
+
+        if not path_obj.suffix or file_path.endswith(("/", "\\")):
+            logger.error(f"Error: Path '{file_path}' appears to be a directory path, not a file.")
+            return None
+
+        try:
+            path_obj.parent.mkdir(parents=True, exist_ok=True)
+            path_obj.touch(exist_ok=True)
+            return file_path
+        except OSError as e:
+            logger.error(f"Error creating file '{file_path}': {e}")
+            return None
+
+    validated_events_path = (
+        validate_and_prepare_file(events_output_path) if events_output_path else None
+    )
+    validated_results_path = (
+        validate_and_prepare_file(results_output_path) if results_output_path else None
+    )
+
+    return validated_events_path, validated_results_path
+
+
+def record_events(output_path: str | None, events: Union[list[str], BaseModel, Any]):
+    if not output_path:
+        return
+
+    if isinstance(events, str):
+        events_content = events
+    elif isinstance(events, BaseModel):
+        events_content = events.model_dump_json(indent=2)
+    else:
+        events_content = json.dumps(events, indent=2)
+
+    with open(output_path, "w") as f:
+        f.write(events_content)
 
 
 ### LLM Configuration
