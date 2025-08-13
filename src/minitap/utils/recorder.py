@@ -4,8 +4,10 @@ from pathlib import Path
 
 from langchain_core.messages import BaseMessage
 
+from minitap.config import record_events
 from minitap.context import get_execution_setup
 from minitap.controllers.mobile_command_controller import take_screenshot
+from minitap.graph.state import State
 from minitap.utils.logger import get_logger
 from minitap.utils.media import compress_base64_jpeg
 
@@ -42,3 +44,15 @@ def record_interaction(response: BaseMessage):
     except Exception as e:
         logger.error(f"Error recording interaction: {e}")
     return "Screenshot recorded successfully"
+
+
+def log_agent_thoughts(state: State, events_output_path: str | None):
+    last_agents_thoughts = state.agents_thoughts[-1] if state.agents_thoughts else None
+    if last_agents_thoughts:
+        previous_last_agents_thoughts = (
+            state.agents_thoughts[-2] if len(state.agents_thoughts) > 1 else None
+        )
+        if previous_last_agents_thoughts != last_agents_thoughts:
+            logger.info(f"💭 {last_agents_thoughts}")
+            if events_output_path:
+                record_events(output_path=events_output_path, events=state.agents_thoughts)

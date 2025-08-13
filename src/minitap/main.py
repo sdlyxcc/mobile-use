@@ -42,6 +42,7 @@ from minitap.utils.media import (
     remove_images_from_trace_folder,
     remove_steps_json_from_trace_folder,
 )
+from minitap.utils.recorder import log_agent_thoughts
 from minitap.utils.time import convert_timestamp_to_str
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
@@ -190,7 +191,6 @@ async def run_automation(
     success = False
     last_state: State | None = None
     result: State | None = None
-    agents_thoughts: set[str] = set()
     try:
         logger.info(f"Invoking graph with input: {graph_input}")
         async for chunk in (await get_graph()).astream(
@@ -204,19 +204,13 @@ async def run_automation(
             stream_mode, content = chunk
             if stream_mode == "values":
                 last_state = content  # type: ignore
-                result = State(**last_state)  # type: ignore
-                last_agents_thoughts = (
-                    result.agents_thoughts[-1] if result.agents_thoughts else None
-                )
-                if last_agents_thoughts:
-                    if last_agents_thoughts not in agents_thoughts:
-                        logger.info(f"💭 {last_agents_thoughts}")
-                        agents_thoughts.add(last_agents_thoughts)
-                        record_events(output_path=events_output_path, events=list(agents_thoughts))
-        if not result:
+                current_state = State(**last_state)  # type: ignore
+                log_agent_thoughts(state=current_state, events_output_path=events_output_path)
+        if not last_state:
             logger.warning("No result received from graph")
             return
 
+        result = State(**last_state)  # type: ignore
         print_ai_response_to_stderr(graph_result=result)
         if output_config and output_config.needs_structured_format():
             logger.info("Generating structured output...")
@@ -231,7 +225,7 @@ async def run_automation(
         logger.info("✅ Automation is success ✅")
         success = True
     except Exception as e:
-        logger.info(f"❌ Test failed with error: {e} ❌")
+        logger.error(f"Error running automation: {e}")
         raise
     finally:
         if traces_temp_path and traces_output_path and start_time:
@@ -256,8 +250,8 @@ async def run_automation(
         logger.info(f"Structured output: {structured_output}")
         record_events(output_path=results_output_path, events=structured_output)
         return structured_output
-    if result.messages and isinstance(result.messages[-1], AIMessage):
-        result = result.messages[-1].content  # type: ignore
+    if last_state and last_state.messages and isinstance(last_state.messages[-1], AIMessage):
+        result = last_state.messages[-1].content  # type: ignore
         logger.info(str(result))
         record_events(output_path=results_output_path, events=result)
         return result
