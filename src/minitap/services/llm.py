@@ -90,10 +90,16 @@ T = TypeVar("T")
 
 
 async def with_fallback(
-    main_call: Callable[[], Awaitable[T]], fallback_call: Callable[[], Awaitable[T]]
+    main_call: Callable[[], Awaitable[T]],
+    fallback_call: Callable[[], Awaitable[T]],
+    none_should_fallback: bool = True,
 ) -> T:
     try:
-        return await main_call()
+        result = await main_call()
+        if result is None and none_should_fallback:
+            logger.warning("Main LLM inference returned None. Falling back...")
+            return await fallback_call()
+        return result
     except Exception as e:
-        print(f"❗ Main LLM inference failed: {e}. Falling back...")
+        logger.warning(f"❗ Main LLM inference failed: {e}. Falling back...")
         return await fallback_call()
