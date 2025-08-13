@@ -203,20 +203,21 @@ async def run_automation(
         ):
             stream_mode, content = chunk
             if stream_mode == "values":
-                last_state = content  # type: ignore
-                current_state = State(**last_state)  # type: ignore
-                log_agent_thoughts(state=current_state, events_output_path=events_output_path)
+                last_state = State(**content)  # type: ignore
+                log_agent_thoughts(
+                    agents_thoughts=last_state.agents_thoughts,
+                    events_output_path=events_output_path,
+                )
         if not last_state:
             logger.warning("No result received from graph")
             return
 
-        result = State(**last_state)  # type: ignore
-        print_ai_response_to_stderr(graph_result=result)
+        print_ai_response_to_stderr(graph_result=last_state)
         if output_config and output_config.needs_structured_format():
             logger.info("Generating structured output...")
             try:
                 structured_output = await outputter(
-                    output_config=output_config, graph_output=result
+                    output_config=output_config, graph_output=last_state
                 )
             except Exception as e:
                 logger.error(f"Failed to generate structured output: {e}")
@@ -251,10 +252,10 @@ async def run_automation(
         record_events(output_path=results_output_path, events=structured_output)
         return structured_output
     if last_state and last_state.messages and isinstance(last_state.messages[-1], AIMessage):
-        result = last_state.messages[-1].content  # type: ignore
-        logger.info(str(result))
-        record_events(output_path=results_output_path, events=result)
-        return result
+        last_msg = last_state.messages[-1].content  # type: ignore
+        logger.info(str(last_msg))
+        record_events(output_path=results_output_path, events=last_msg)
+        return last_msg
     return None
 
 
