@@ -10,8 +10,8 @@ from langgraph.prebuilt import ToolNode
 
 from minitap.agents.contextor.contextor import contextor_node
 from minitap.agents.cortex.cortex import cortex_node
-from minitap.agents.executor.executor_context_cleaner import executor_context_cleaner_node
 from minitap.agents.executor.executor import executor_node
+from minitap.agents.executor.executor_context_cleaner import executor_context_cleaner_node
 from minitap.agents.orchestrator.orchestrator import orchestrator_node
 from minitap.agents.planner.planner import planner_node
 from minitap.agents.planner.utils import all_completed, get_current_subgoal, one_of_them_is_failure

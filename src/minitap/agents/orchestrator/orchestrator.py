@@ -29,9 +29,9 @@ logger = get_logger(__name__)
 async def orchestrator_node(state: State):
     if nothing_started(state.subgoal_plan):
         state.subgoal_plan = start_next_subgoal(state.subgoal_plan)
-        logger.info("No subgoal started yet, starting the first one.")
+        new_subgoal = get_current_subgoal(state.subgoal_plan)
         return {
-            "agents_thoughts": ["No subgoal started yet, starting the first one."],
+            "agents_thoughts": [f"Starting the first subgoal: {new_subgoal}"],
             "subgoal_plan": state.subgoal_plan,
         }
 
@@ -63,13 +63,14 @@ async def orchestrator_node(state: State):
         thoughts = [response.reason]
 
         if all_completed(state.subgoal_plan):
-            logger.info("All subgoals completed, the goal is achieved.")
+            logger.success("All the subgoals have been completed successfully.")
             return {
                 "subgoal_plan": state.subgoal_plan,
                 "agents_thoughts": thoughts,
             }
         state.subgoal_plan = start_next_subgoal(state.subgoal_plan)
-        thoughts.append("==== NEXT SUBGOAL ====")
+        new_subgoal = get_current_subgoal(state.subgoal_plan)
+        thoughts.append(f"==== NEXT SUBGOAL: {new_subgoal} ====")
         return {
             "agents_thoughts": thoughts,
             "subgoal_plan": state.subgoal_plan,

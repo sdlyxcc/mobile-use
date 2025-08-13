@@ -1,7 +1,7 @@
 from pathlib import Path
 
 from jinja2 import Template
-from langchain_core.messages import AIMessage, SystemMessage
+from langchain_core.messages import SystemMessage
 
 from minitap.agents.planner.types import PlannerOutput, Subgoal, SubgoalStatus
 from minitap.agents.planner.utils import one_of_them_is_failure
@@ -53,7 +53,6 @@ async def planner_node(state: State):
     logger.info("\n".join(str(s) for s in subgoals_plan))
 
     return {
-        "messages": [AIMessage(content="A new plan has been generated.")],
         "needs_replan": False,
         "subgoal_plan": subgoals_plan,
     }

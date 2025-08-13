@@ -9,13 +9,14 @@ from langchain_core.messages import (
     SystemMessage,
     ToolMessage,
 )
-
 from langgraph.graph.message import REMOVE_ALL_MESSAGES
+
 from minitap.agents.cortex.types import CortexOutput
 from minitap.agents.planner.utils import get_current_subgoal
+from minitap.config import LLM
 from minitap.context import get_device_context
 from minitap.graph.state import State
-from minitap.services.llm import get_llm
+from minitap.services.llm import get_llm, with_fallback
 from minitap.utils.conversations import get_screenshot_message_for_llm
 from minitap.utils.decorators import wrap_with_callbacks
 from minitap.utils.logger import get_logger
@@ -66,9 +67,14 @@ async def cortex_node(state: State):
         ui_hierarchy_str = json.dumps(ui_hierarchy_dict, indent=2, ensure_ascii=False)
         messages.append(HumanMessage(content="Here is the UI hierarchy:\n" + ui_hierarchy_str))
 
-    llm = get_llm(agent_node="cortex", temperature=1)
-    llm = llm.with_structured_output(CortexOutput)
-    response: CortexOutput = await llm.ainvoke(messages)  # type: ignore
+    llm = get_llm(agent_node="cortex", temperature=1).with_structured_output(CortexOutput)
+    llm_fallback = get_llm(
+        override_llm=LLM(provider="openai", model="gpt-5")
+    ).with_structured_output(CortexOutput)
+    response: CortexOutput = await with_fallback(
+        main_call=lambda: llm.ainvoke(messages),
+        fallback_call=lambda: llm_fallback.ainvoke(messages),
+    )  # type: ignore
 
     is_subgoal_completed = response.complete_current_subgoal
     return {
