@@ -190,7 +190,6 @@ async def run_automation(
 
     success = False
     last_state: State | None = None
-    result: State | None = None
     try:
         logger.info(f"Invoking graph with input: {graph_input}")
         async for chunk in (await get_graph()).astream(
@@ -251,8 +250,8 @@ async def run_automation(
         logger.info(f"Structured output: {structured_output}")
         record_events(output_path=results_output_path, events=structured_output)
         return structured_output
-    if last_state and last_state.messages and isinstance(last_state.messages[-1], AIMessage):
-        last_msg = last_state.messages[-1].content  # type: ignore
+    if last_state and last_state.agents_thoughts:
+        last_msg = last_state.agents_thoughts[-1]
         logger.info(str(last_msg))
         record_events(output_path=results_output_path, events=last_msg)
         return last_msg
