@@ -46,8 +46,8 @@ def record_interaction(response: BaseMessage):
 
 
 def log_agent_thoughts(agents_thoughts: list[str], events_output_path: str | None):
-    last_agents_thoughts = agents_thoughts[-1] if agents_thoughts else None
-    if last_agents_thoughts:
+    if len(agents_thoughts) > 0:
+        last_agents_thoughts = agents_thoughts[-1]
         previous_last_agents_thoughts = agents_thoughts[-2] if len(agents_thoughts) > 1 else None
         if previous_last_agents_thoughts != last_agents_thoughts:
             logger.info(f"💭 {last_agents_thoughts}")
