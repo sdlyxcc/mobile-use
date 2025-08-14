@@ -1,8 +1,9 @@
+from typing import Optional
+
 from langchain_core.messages import ToolMessage
 from langchain_core.tools import tool
 from langchain_core.tools.base import InjectedToolCallId
 from langgraph.types import Command
-from typing import Optional
 from typing_extensions import Annotated
 
 from minitap.controllers.mobile_command_controller import SwipeRequest

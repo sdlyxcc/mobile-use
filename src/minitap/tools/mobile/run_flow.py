@@ -12,13 +12,13 @@ from minitap.tools.tool_wrapper import ToolWrapper
 def run_flow(
     tool_call_id: Annotated[str, InjectedToolCallId],
     agent_thought: str,
-    yaml: str,
+    flow_steps: list,
     dry_run: bool = False,
 ):
     """
     Run a flow i.e, a sequence of commands.
     """
-    output = run_flow_controller(yaml=yaml, dry_run=dry_run)
+    output = run_flow_controller(flow_steps=flow_steps, dry_run=dry_run)
     return Command(
         update={
             "agents_thoughts": [agent_thought],

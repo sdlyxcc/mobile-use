@@ -1,15 +1,15 @@
 from enum import Enum
 from typing import Literal, Optional, Union
 
+import yaml
 from pydantic import BaseModel, ConfigDict, Field
+from requests import JSONDecodeError
 
 from minitap.clients.device_hardware_client import get_client as get_device_hardware_client
 from minitap.clients.screen_api_client import get_client as get_screen_api_client
 from minitap.config import settings
 from minitap.utils.errors import ControllerErrors
 from minitap.utils.logger import get_logger
-from requests import JSONDecodeError
-import yaml
 
 screen_api = get_screen_api_client(settings.DEVICE_SCREEN_API_BASE_URL)
 device_hardware_api = get_device_hardware_client(settings.DEVICE_HARDWARE_BRIDGE_BASE_URL)
@@ -195,19 +195,21 @@ class SwipeStartEndPercentagesRequest(BaseModel):
 
 class SwipeRequest(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    start_end_coordinates: Optional[SwipeStartEndCoordinatesRequest] = None
-    start_end_percentages: Optional[SwipeStartEndPercentagesRequest] = None
-    direction: Optional[Literal["UP", "DOWN", "LEFT", "RIGHT"]] = None
+    swipe_mode: (
+        SwipeStartEndCoordinatesRequest
+        | SwipeStartEndPercentagesRequest
+        | Literal["UP", "DOWN", "LEFT", "RIGHT"]
+    )
     duration: Optional[int] = None  # in ms, default is 400ms
 
     def to_dict(self):
         res = {}
-        if self.start_end_coordinates:
-            res |= self.start_end_coordinates.to_dict()
-        elif self.start_end_percentages:
-            res |= self.start_end_percentages.to_dict()
-        if self.direction:
-            res |= {"direction": self.direction}
+        if isinstance(self.swipe_mode, SwipeStartEndCoordinatesRequest):
+            res |= self.swipe_mode.to_dict()
+        elif isinstance(self.swipe_mode, SwipeStartEndPercentagesRequest):
+            res |= self.swipe_mode.to_dict()
+        elif self.swipe_mode in ["UP", "DOWN", "LEFT", "RIGHT"]:
+            res |= {"direction": self.swipe_mode}
         if self.duration:
             res |= {"duration": self.duration}
         return res
@@ -315,10 +317,9 @@ def run_flow_with_wait_for_animation_to_end(base_flow: list, dry_run: bool = Fal
 
 
 if __name__ == "__main__":
-    launch_app("org.mozilla.firefox")
-    tap(IdSelectorRequest(id="Search or enter"))
-    input_text("tesla model s")
-    wait_for_animation_to_end()
-    press_key(Key.ENTER)
-    wait_for_animation_to_end()
-    print("done")
+    swipe(
+        SwipeRequest(
+            swipe_mode="LEFT",
+            duration=700,
+        )
+    )
