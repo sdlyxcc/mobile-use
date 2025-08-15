@@ -1,0 +1,55 @@
+services:
+  mobile-use-ip:
+    container_name: mobile-use
+    user: "minitap:minitap"
+    restart: no
+    build:
+      context: .
+      dockerfile: slim.Dockerfile
+    env_file:
+      - .env
+    environment:
+      ADB_CONNECT_ADDR: "${ADB_CONNECT_ADDR}"
+      DEVICE_HARDWARE_BRIDGE_BASE_URL: "http://maestro:9999"
+      DEVICE_SCREEN_API_BASE_URL: "http://screen-api:9998"
+      RESULTS_OUTPUT_PATH: "/home/minitap/results.txt"
+      EVENTS_OUTPUT_PATH: "/home/minitap/events.json"
+      MOBILE_USE_HEALTH_RETRIES: "150"
+      MOBILE_USE_HEALTH_DELAY: "2"
+    volumes:
+      - mobile-use-adb-keys:/home/minitap/.android
+    depends_on:
+      - maestro
+      - screen-api
+
+  maestro:
+    container_name: maestro
+    user: "minitap:minitap"
+    restart: unless-stopped
+    build:
+      context: ./assets/maestro
+      dockerfile: Dockerfile
+    environment:
+      ADB_CONNECT_ADDR: "${ADB_CONNECT_ADDR}"
+    volumes:
+      - maestro-adb-keys:/home/minitap/.android
+    ports:
+      - "9999:9999"
+
+  screen-api:
+    container_name: screen-api
+    user: "minitap:minitap"
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: servers.Dockerfile
+    command: ["--only", "screen_api"]
+    environment:
+      DEVICE_HARDWARE_BRIDGE_BASE_URL: "http://maestro:9999"
+      DEVICE_SCREEN_API_PORT: "9998"
+    depends_on:
+      - maestro
+    
+volumes:
+  mobile-use-adb-keys:
+  maestro-adb-keys:

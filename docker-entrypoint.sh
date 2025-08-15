@@ -2,29 +2,22 @@
 
 set -eu
 
-# Trap SIGTERM and SIGINT to kill background processes
-trap 'kill $(jobs -p)' SIGTERM SIGINT
+while true; do
+    set +e
+    adb connect "$ADB_CONNECT_ADDR"
+    state="$(adb get-state 2>/dev/null)"
+    set -e
 
-if [ ! -z "${ADB_CONNECT_ADDR:-}" ]; then
-    while true; do
-        output="$(adb connect "$ADB_CONNECT_ADDR" 2>&1)"
-        exit_code=$?
-        echo $output
+    adb devices
 
-        if [[ $exit_code -ne 0 ]]; then
-            echo "ADB connect failed with exit code $exit_code"
-        elif echo "$output" | grep -qi "unable to connect\|connection refused"; then
-            echo "Connection refused or unable to connect detected in ADB output"
-        else
-            echo "ADB connect successful"
-            break
-        fi
+    if [[ "$state" = "device" ]]; then
+        echo "Device is connected and authorized!"
+        break
+    fi
 
-        echo "ADB connect failed, retrying in 2s..."
-        sleep 2
-    done
-fi
-
-sleep 2
+    echo "Waiting for device authorization... (accept the prompt on your phone)"
+    set +e; adb disconnect "$ADB_CONNECT_ADDR"; set -e
+    sleep 2
+done
 
 uv run minitap "$@"

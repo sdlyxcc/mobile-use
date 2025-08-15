@@ -8,23 +8,35 @@
 
 **What is it?** An AI agent to control your phone (IOS/Android) with natural language.
 
+> **Note:** This quickstart, with everything dockerized, is only available for Android devices/emulators as of now.
+
 **How to run?**
 
-- Either plug your Android device and enable USB-debugging
-- Either launch an IOS/Android emulator
+- Either plug your Android device and enable USB-debugging via the Developer Options
+- Or launch an Android emulator
+
+> **Note:** You must have Docker installed for this quickstart to work.
 
 Then run in your terminal:
 
-```bash
-# 1. Build the Docker image
-docker build -t mobile-use .
+1. For Linux/macOS:
 
-# 2. Run the agent to scrape data from your device
-# (Ensure your device is connected and accessible via adb + env var set)
-docker run --rm -it --env-file .env -e ADB_CONNECT_ADDR="host.docker.internal:5555" mobile-use \
+```bash
+minitap.sh \
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
+
+2. For Windows (inside a Powershell terminal):
+
+```powershell
+powershell.exe -ExecutionPolicy Bypass -File minitap.ps1 \
+  "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
+  --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
+```
+
+> **Note:** If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
+> Similarly, Maestro will need to install its APK on your device, which will also require you to accept the installation request.
 
 <div align="center">
 
@@ -72,6 +84,12 @@ Mobile-use currently supports the following devices:
 > **Note**: Physical iOS devices are not yet supported.
 
 #### 2. Prerequisites
+
+For Android:
+- **[Android Debug Bridge (ADB)](https://developer.android.com/studio/releases/platform-tools)**: A tool to connect to your device.
+
+For iOS:
+- **[Xcode](https://developer.apple.com/xcode/)**: Apple's IDE for iOS development.
 
 Before you begin, ensure you have the following installed:
 

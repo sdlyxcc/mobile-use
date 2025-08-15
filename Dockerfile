@@ -14,7 +14,9 @@ RUN apt-get update && \
 
 # Use non-root user
 RUN useradd -m -s /bin/bash --create-home minitap && \
-    chown -R minitap:minitap /opt/
+    chown -R minitap:minitap /opt/ && \
+    mkdir -p /home/minitap/.android && \
+    chown -R minitap:minitap /home/minitap/.android
 USER minitap
 
 # Download & install latest UV installer
