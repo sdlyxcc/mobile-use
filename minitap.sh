@@ -2,6 +2,56 @@
 
 set -eu
 
+select_usb_device() {
+    local serials
+    serials=($(adb devices | grep -w "device" | awk '{print $1}'))
+
+    if [ ${#serials[@]} -gt 1 ]; then
+        echo "Multiple USB devices found. Please select one:" >&2
+        for i in "${!serials[@]}"; do
+            echo "[$((i+1))] ${serials[$i]}" >&2
+        done
+
+        local selection
+        read -p "Enter number: " selection
+        # Validate that the selection is a number and within the valid range
+        if [[ "$selection" =~ ^[0-9]+$ ]] && [ "$selection" -gt 0 ] && [ "$selection" -le "${#serials[@]}" ]; then
+            local index=$((selection-1))
+            echo "${serials[$index]}"
+        else
+            echo "Invalid selection." >&2
+            exit 1
+        fi
+    elif [ ${#serials[@]} -eq 1 ]; then
+        echo "${serials[0]}"
+    else
+        echo "No USB devices found." >&2
+        exit 1
+    fi
+}
+
+is_emulator_device() {
+    local device_serial="$1"
+    local adb_cmd="adb"
+    if [ -n "$device_serial" ]; then
+        adb_cmd="adb -s $device_serial"
+    fi
+
+    if $adb_cmd shell getprop ro.kernel.qemu | grep -q "1"; then
+        return 0
+    fi
+
+    if $adb_cmd shell getprop ro.product.model | grep -q -E "sdk|emulator|Android SDK built for x86"; then
+        return 0
+    fi
+
+    if $adb_cmd shell getprop ro.build.fingerprint | grep -q -E "generic|emulator"; then
+        return 0
+    fi
+
+    return 1
+}
+
 # Find devices connected via TCP/IP
 tcp_devices=($(adb devices | grep -E -o '([0-9]{1,3}(\.[0-9]{1,3}){3}:[0-9]+)' | sort -u))
 
@@ -31,25 +81,33 @@ else
     # If no TCP/IP devices found, get IP and connect
     echo "No device in TCP/IP mode, enabling..."
     
-    # Try different common Wi-Fi interface names
-    wifi_interfaces=("wlan0" "wlan1" "wifi0" "wifi1" "rmnet_data1")
-    device_ip_only=""
-    
-    for interface in "${wifi_interfaces[@]}"; do
-        ADB_COMMAND="ip -f inet addr show $interface | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
-        ip_result=$(adb shell "$ADB_COMMAND" | tr -d '\r\n')
-        if [ -n "$ip_result" ]; then
-            device_ip_only="$ip_result"
-            echo "Found IP on interface $interface: $device_ip_only"
-            break
-        fi
-    done
+    selected_device_serial="$(select_usb_device)"
+    echo "Choosing device: $selected_device_serial"
+
+    if is_emulator_device "$selected_device_serial"; then
+        device_ip_only="host.docker.internal"
+    else
+        # Try different common Wi-Fi interface names
+        wifi_interfaces=("wlan0" "wlan1" "wifi0" "wifi1" "rmnet_data1")
+        device_ip_only=""
+
+        for interface in "${wifi_interfaces[@]}"; do
+            ADB_COMMAND="ip -f inet addr show $interface | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
+            ip_result=$(adb -s "$selected_device_serial" shell "$ADB_COMMAND" | tr -d '\r\n')
+            if [ -n "$ip_result" ]; then
+                device_ip_only="$ip_result"
+                echo "Found IP on interface $interface: $device_ip_only"
+                break
+            fi
+        done
+    fi
     
     if [ -z "$device_ip_only" ]; then
         echo "Error: Could not get device IP. Is a device connected via USB and on the same Wi-Fi network?" >&2
         exit 1
     fi
-    adb tcpip 5555
+
+    adb -s "$selected_device_serial" tcpip 5555
     device_ip="${device_ip_only}:5555"
 fi
 

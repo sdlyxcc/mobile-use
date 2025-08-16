@@ -1,6 +1,70 @@
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
+
+function Select-UsbDevice {
+    $adb_devices = $(adb devices) -join "`n"
+    $serials = @(
+        [regex]::Matches(
+            $adb_devices,
+            '^(.*?)\s+device$',
+            [System.Text.RegularExpressions.RegexOptions]::Multiline
+        ) | ForEach-Object { $_.Groups[1].Value }
+    )
+    $selected_device_serial = $null
+
+    if ($serials.Count -gt 1) {
+        Write-Host "Multiple USB devices found. Please select one:"
+        for ($i = 0; $i -lt $serials.Count; $i++) {
+            Write-Host "[$($i+1)] $($serials[$i])"
+        }
+        $selection = Read-Host -Prompt "Enter number"
+        $index = [int]$selection - 1
+        if ($index -ge 0 -and $index -lt $serials.Count) {
+            $selected_device_serial = $serials[$index]
+        } else {
+            Write-Error "Invalid selection."
+            exit 1
+        }
+    } elseif ($serials.Count -eq 1) {
+        $selected_device_serial = $serials[0]
+    } else {
+        Write-Error "No USB devices found."
+        exit 1
+    }
+    return $selected_device_serial
+}
+
+function Is-EmulatorDevice {
+    param(
+        [string]$DeviceSerial = ""
+    )
+
+    $adb = "adb"
+    $adbArgs = @()
+    if (-not [string]::IsNullOrEmpty($DeviceSerial)) {
+        $adbArgs += "-s", $DeviceSerial
+    }
+
+    $qemu = & $adb @adbArgs shell getprop ro.kernel.qemu
+    if ($qemu -match "1") {
+        return $true
+    }
+
+    $model = & $adb @adbArgs shell getprop ro.product.model
+    if ($model -match "sdk|emulator|Android SDK built for x86") {
+        return $true
+    }
+
+    $fingerprint = & $adb @adbArgs shell getprop ro.build.fingerprint
+    if ($fingerprint -match "generic|emulator") {
+        return $true
+    }
+
+    return $false
+}
+
+
 # Find devices connected via TCP/IP
 $tcp_devices = @(
     [regex]::Matches(
@@ -33,26 +97,36 @@ if ($tcp_devices) {
 } else {
     # If no TCP/IP devices found, get IP and connect
     Write-Host "No device in TCP/IP mode, enabling..."
-    
-    # Try different common Wi-Fi interface names
-    $wifi_interfaces = @("wlan0", "wlan1", "wifi0", "wifi1", "rmnet_data1")
-    $device_ip_only = $null
-    
-    foreach ($interface in $wifi_interfaces) {
-        $ADB_COMMAND = "ip -f inet addr show $interface | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
-        $ip_result = adb shell $ADB_COMMAND
-        if ($ip_result -and $ip_result.Trim() -ne "") {
-            $device_ip_only = $ip_result.Trim()
-            Write-Host "Found IP on interface $interface`: $device_ip_only"
-            break
+
+    $selected_device_serial = Select-UsbDevice
+
+    Write-Output "Choosing device: $selected_device_serial"
+
+    if (Is-EmulatorDevice -DeviceSerial "$selected_device_serial") {
+        $device_ip_only = "host.docker.internal"
+    } else {
+        # Try different common Wi-Fi interface names
+        $wifi_interfaces = @("wlan0", "wlan1", "wifi0", "wifi1", "rmnet_data1")
+        $device_ip_only = $null
+
+        foreach ($interface in $wifi_interfaces) {
+            $ADB_COMMAND = "ip -f inet addr show $interface | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
+            $ip_result = adb -s $selected_device_serial shell $ADB_COMMAND
+            if ($ip_result -and $ip_result.Trim() -ne "") {
+                $device_ip_only = $ip_result.Trim()
+                Write-Host "Found IP on interface $interface`: $device_ip_only"
+                break
+            }
         }
     }
+
     if (-not $device_ip_only) {
         Write-Error "Could not get device IP. Is a device connected via USB and on the same Wi-Fi network?"
         exit 1
     }
+
     $device_ip_only = ($device_ip_only).Trim()
-    adb tcpip 5555
+    adb -s $selected_device_serial tcpip 5555
     $device_ip = "${device_ip_only}:5555"
 }
 
