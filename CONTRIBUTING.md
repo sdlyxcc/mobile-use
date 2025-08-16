@@ -1,19 +1,25 @@
-# Contributing to MiniTap
+# Contributing to mobile-use 🚀
 
-First off, thank you for considering contributing to MiniTap! Your help is greatly appreciated.
+Hey there, contributor! 🎉 First off, thank you for considering helping out with mobile-use. Every contribution, big or small, is incredibly valuable to us.
 
-## Getting Started
+## 🏁 Getting Started
+
+Ready to dive in? Here’s how you can get set up:
 
 1.  **Fork & Clone**: Fork the repository and clone it to your local machine.
-2.  **Set up Environment**: Follow README.md instructions to get started.
+2.  **Set Up Your Environment**: Follow the "Manual Launch (Development Mode)" instructions in our `README.md` to get everything installed and ready to go.
 
-## Making Changes
+## 💻 How to Contribute
 
-1.  **Branching**: Create a new branch for your feature or bug fix from the `main` branch.
+Got an idea or a fix? Here’s the general workflow:
+
+1.  **Pick an Issue**: A great place to start is our issues tab. Look for anything tagged `good first issue`!
+2.  **Create a Branch**: Create a descriptive branch name for your feature or bug fix.
     ```bash
-    git checkout -b your-feature-name
+    git checkout -b your-awesome-feature
     ```
-2.  **Code Style & Quality**: Before committing, please run our linter and formatter to ensure your code adheres to the project's style guidelines.
+3.  **Write Your Code**: This is the fun part! Make your changes and improvements.
+4.  **Keep It Clean**: Before you commit, make sure your code is formatted and linted correctly with Ruff.
 
     ```bash
     # Check for any linting errors
@@ -23,59 +29,47 @@ First off, thank you for considering contributing to MiniTap! Your help is great
     ruff format .
     ```
 
-3.  **Commit**: Use clear and descriptive commit messages, following conventional commits.
+5.  **Commit Your Changes**: Use clear and descriptive commit messages. We follow the [Conventional Commits](https://www.conventionalcommits.org/en/v1.0.0/) standard.
 
-## Submitting a Pull Request
+## ✨ Submitting a Pull Request
 
-Once your changes are ready, push your branch to your fork and open a Pull Request against the `main` branch of the original repository. Provide a clear description of the changes you've made.
+When your code is ready, open a Pull Request!
 
-Yes — absolutely. What you have is based on a classic `pip-tools` or `poetry` workflow, but **it doesn't match how `uv` actually works**, and yes — you can **simplify it a lot** while still being precise.
+- Push your branch to your fork.
+- Open a PR against the `main` branch of the original repository.
+- Provide a clear description of the changes you've made. We'll review it as soon as we can!
 
-## Dependency Management
+## 📦 Dependency Management with `uv`
 
-We use [`uv`](https://github.com/astral-sh/uv) for dependency management and locking.
+We use [`uv`](https://github.com/astral-sh/uv) to manage our dependencies. It's fast, and efficient.
 
-### 🔄 Installing dependencies
+### Installing Dependencies
 
-To install all project dependencies from the lockfile:
+To get all the project dependencies installed from the lockfile, just run:
 
 ```bash
 uv sync
 ```
 
-````
+This ensures your environment is perfectly aligned with ours.
 
-This ensures a consistent environment across all machines.
+### Adding a New Package
 
----
-
-### ➕ Adding a new package
-
-To add a new package (dev or prod):
+Need to add a new package? Here’s how:
 
 ```bash
+# For a production package
 uv pip install <package-name>
-uv lock
-```
 
-Then commit the updated `uv.lock`.
-
-If the package is used only in development, add the `--extra=dev` flag:
-
-```bash
+# For a development-only package
 uv pip install <package-name> --extra=dev
-uv lock
 ```
 
----
-
-### ✅ Keeping things in sync
-
-If you update dependencies manually (or pull a new lockfile):
+After installing, don't forget to update the lockfile and commit the changes:
 
 ```bash
-uv sync
+uv lock
+# git add uv.lock pyproject.toml && git commit ...
 ```
 
-That's it.
-````
+That's it! Thanks again for your contribution. We're excited to see what you build!

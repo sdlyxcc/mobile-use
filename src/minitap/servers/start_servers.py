@@ -1,16 +1,16 @@
-from enum import Enum
 import multiprocessing
 import signal
 import sys
 import time
+from enum import Enum
 from typing import Annotated, Optional
 
 import requests
 import typer
 
+from minitap.servers.config import server_settings
 from minitap.servers.device_hardware_bridge import DeviceHardwareBridge
 from minitap.servers.device_screen_api import start as _start_device_screen_api
-from minitap.servers.config import server_settings
 from minitap.servers.stop_servers import stop_servers
 from minitap.utils.logger import get_server_logger
 

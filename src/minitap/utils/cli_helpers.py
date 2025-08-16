@@ -1,9 +1,9 @@
-import subprocess
 import sys
 
 from rich.console import Console
 
 from minitap.clients.adb_client import adb
+from minitap.clients.ios_client import get_ios_devices
 
 
 def display_device_status(console: Console):
@@ -23,6 +23,16 @@ def display_device_status(console: Console):
         console.print(f"You can start an emulator using a command like: [bold]'{command}'[/bold]")
         console.print("[italic]iOS detection coming soon...[/italic]")
 
-
-def run_shell_command_on_host(command: str) -> str:
-    return subprocess.check_output(command, shell=True, text=True, encoding="utf-8")
+    xcrun_available, ios_devices, error_message = get_ios_devices()
+    if xcrun_available:
+        if ios_devices:
+            console.print("✅ [bold green]iOS device(s) connected:[/bold green]")
+            for device in ios_devices:
+                console.print(f"  - {device}")
+        else:
+            console.print("❌ [bold red]No iOS device found.[/bold red]")
+            console.print(
+                "Please make sure your emulator is running or a device is connected via USB."
+            )
+        return
+    console.print(f"❌ [bold red]iOS check failed:[/bold red] {error_message}")
