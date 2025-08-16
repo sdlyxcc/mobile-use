@@ -2,13 +2,23 @@
 
 set -eu
 
-# Trap SIGTERM and SIGINT to kill background processes
-trap 'kill $(jobs -p)' SIGTERM SIGINT
-
-if [ ! -z "${ADB_CONNECT_ADDR:-}" ]; then
+while true; do
+    set +e
     adb connect "$ADB_CONNECT_ADDR"
-fi
+    state="$(adb get-state 2>/dev/null)"
+    set -e
 
-sleep 2
+    adb devices
 
-uv run minitap "$@"
+    if [[ "$state" = "device" ]]; then
+        echo "Device is connected and authorized!"
+        break
+    fi
+
+    set +e; adb disconnect "$ADB_CONNECT_ADDR"; set -e
+
+    echo "Waiting for device authorization... (accept the prompt on your phone)"
+    sleep 2
+done
+
+minitap "$@"

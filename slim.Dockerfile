@@ -1,30 +1,55 @@
-FROM python:3.13-slim
+# =================
+#   Builder stage
+# =================
+FROM ghcr.io/astral-sh/uv:python3.12-bookworm-slim AS builder
+ENV UV_COMPILE_BYTECODE=1 UV_LINK_MODE=copy
 
-ARG MAESTRO_VERSION=1.41.0
+# Configure the Python directory so it is consistent
+ENV UV_PYTHON_INSTALL_DIR=/python
 
-# Install required dependencies for UV & adb
+# Only use the managed Python version
+ENV UV_PYTHON_PREFERENCE=only-managed
+
+# Install Python before the project for caching
+RUN uv python install 3.12
+
+WORKDIR /app
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project --no-dev
+COPY src /app/src
+COPY pyproject.toml pyrightconfig.json requirements.txt uv.lock \
+    README.md CONTRIBUTING.md llm-config.defaults.jsonc LICENSE \
+    /app/
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked --no-dev
+
+
+# =================
+#    Final stage
+# =================
+FROM debian:bookworm-slim
+
+# Install required dependencies for mobile-use
 RUN apt-get update && \
     apt-get install -y --no-install-recommends curl adb && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Use non-root user
-RUN useradd -m -s /bin/bash --create-home minitap
+RUN useradd -m -s /bin/bash --create-home minitap && \
+    mkdir -p /home/minitap/.android && \
+    chown -R minitap:minitap /home/minitap/.android
 USER minitap
-
-# Download & install latest UV installer
-ADD --chown=minitap:minitap https://astral.sh/uv/install.sh /uv-installer.sh
-RUN sh /uv-installer.sh
-ENV PATH="/home/minitap/.local/bin:$PATH"
 
 WORKDIR /app
 
-COPY --chown=minitap:minitap src /app/src
-COPY --chown=minitap:minitap \
-    pyproject.toml pyrightconfig.json requirements.txt uv.lock \
-    README.md LICENSE \
-    /app/
+# Copy the Python version
+COPY --from=builder --chown=python:python /python /python
 
-RUN uv sync --locked
+# Copy the application from the builder
+COPY --from=builder --chown=app:app /app /app
+ENV PATH="/app/.venv/bin:$PATH"
 
 COPY --chown=minitap:minitap docker-entrypoint.sh /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

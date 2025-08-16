@@ -25,4 +25,14 @@ dist/
 build/
 *.egg-info/
 
-.venv
+# Project
+.venv/
+.github/
+.ruff_cache/
+assets/
+*.Dockerfile
+*.dockerignore
+minitap.ps1
+minitap.sh
+llm-config.override.jsonc
+docker-compose.yml

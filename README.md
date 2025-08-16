@@ -8,23 +8,37 @@
 
 **What is it?** An AI agent to control your phone (IOS/Android) with natural language.
 
+> **Note:** This quickstart, with everything dockerized, is only available for Android devices/emulators as of now.
+
 **How to run?**
 
-- Either plug your Android device and enable USB-debugging
-- Either launch an IOS/Android emulator
+- Either plug your Android device and enable USB-debugging via the Developer Options
+- Or launch an Android emulator
+
+> **Note:** You must have Docker installed for this quickstart to work.
 
 Then run in your terminal:
 
-```bash
-# 1. Build the Docker image
-docker build -t mobile-use .
+1. For Linux/macOS:
 
-# 2. Run the agent to scrape data from your device
-# (Ensure your device is connected and accessible via adb + env var set)
-docker run --rm -it --env-file .env -e ADB_CONNECT_ADDR="host.docker.internal:5555" mobile-use \
+```bash
+# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
+minitap.sh \
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
+
+2. For Windows (inside a Powershell terminal):
+
+```powershell
+# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
+powershell.exe -ExecutionPolicy Bypass -File minitap.ps1 `
+  "Open Gmail, find first 3 unread emails, and list their sender and subject line" `
+  --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
+```
+
+> **Note:** If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
+> Similarly, Maestro will need to install its APK on your device, which will also require you to accept the installation request.
 
 <div align="center">
 
@@ -73,6 +87,12 @@ Mobile-use currently supports the following devices:
 
 #### 2. Prerequisites
 
+For Android:
+- **[Android Debug Bridge (ADB)](https://developer.android.com/studio/releases/platform-tools)**: A tool to connect to your device.
+
+For iOS:
+- **[Xcode](https://developer.apple.com/xcode/)**: Apple's IDE for iOS development.
+
 Before you begin, ensure you have the following installed:
 
 - **[uv](https://github.com/astral-sh/uv)**: A lightning-fast Python package manager.
@@ -83,8 +103,7 @@ Before you begin, ensure you have the following installed:
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/mobile-use.git
-    cd mobile-use/mobile-use
+    git clone https://github.com/your-username/mobile-use.git && cd mobile-use
     ```
 
 2.  **Create & activate the virtual environment:**
@@ -129,7 +148,7 @@ To run mobile-use, simply pass your command as an argument.
 **Example 1: Basic Command**
 
 ```bash
-python ./src/mobile-use/main.py "Go to settings and tell me my current battery level"
+python ./src/minitap/main.py "Go to settings and tell me my current battery level"
 ```
 
 **Example 2: Data Scraping**
@@ -137,7 +156,7 @@ python ./src/mobile-use/main.py "Go to settings and tell me my current battery l
 Extract specific information and get it back in a structured format. For instance, to get a list of your unread emails:
 
 ```bash
-python ./src/mobile-use/main.py \
+python ./src/minitap/main.py \
   "Open Gmail, find all unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```

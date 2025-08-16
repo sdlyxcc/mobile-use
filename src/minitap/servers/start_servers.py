@@ -3,6 +3,7 @@ import signal
 import sys
 import time
 from enum import Enum
+import os
 from typing import Annotated, Optional
 
 import requests
@@ -24,6 +25,9 @@ shutdown_requested = False
 def check_device_screen_api_health(base_url: Optional[str] = None, max_retries=30, delay=1):
     base_url = base_url or f"http://localhost:{server_settings.DEVICE_SCREEN_API_PORT}"
     health_url = f"{base_url}/health"
+
+    max_retries = int(os.getenv("MOBILE_USE_HEALTH_RETRIES", max_retries))
+    delay = int(os.getenv("MOBILE_USE_HEALTH_DELAY", delay))
 
     for attempt in range(max_retries):
         try:
