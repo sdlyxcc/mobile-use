@@ -30,8 +30,21 @@ if [ ${#tcp_devices[@]} -gt 0 ]; then
 else
     # If no TCP/IP devices found, get IP and connect
     echo "No device in TCP/IP mode, enabling..."
-    ADB_COMMAND="ip addr show wlan0 | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
-    device_ip_only=$(adb shell "$ADB_COMMAND" | tr -d '\r\n')
+    
+    # Try different common Wi-Fi interface names
+    wifi_interfaces=("wlan0" "wlan1" "wifi0" "wifi1" "rmnet_data1")
+    device_ip_only=""
+    
+    for interface in "${wifi_interfaces[@]}"; do
+        ADB_COMMAND="ip -f inet addr show $interface | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
+        ip_result=$(adb shell "$ADB_COMMAND" | tr -d '\r\n')
+        if [ -n "$ip_result" ]; then
+            device_ip_only="$ip_result"
+            echo "Found IP on interface $interface: $device_ip_only"
+            break
+        fi
+    done
+    
     if [ -z "$device_ip_only" ]; then
         echo "Error: Could not get device IP. Is a device connected via USB and on the same Wi-Fi network?" >&2
         exit 1
