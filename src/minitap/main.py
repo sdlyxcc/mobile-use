@@ -28,12 +28,13 @@ from minitap.controllers.platform_specific_commands_controller import get_first_
 from minitap.graph.graph import get_graph
 from minitap.graph.state import State
 from minitap.llm_config_context import LLMConfigContext, set_llm_config_context
+from minitap.servers.config import server_settings
 from minitap.servers.device_hardware_bridge import BridgeStatus
 from minitap.servers.start_servers import (
-    check_device_screen_api_health,
     start_device_hardware_bridge,
     start_device_screen_api,
 )
+from minitap.servers.stop_servers import stop_servers
 from minitap.utils.cli_helpers import display_device_status
 from minitap.utils.logger import get_logger
 from minitap.utils.media import (
@@ -54,6 +55,56 @@ def print_ai_response_to_stderr(graph_result: State):
         if isinstance(msg, AIMessage):
             print(msg.content, file=sys.stderr)
             return
+
+
+def check_device_screen_api_health_with_retry_logic(
+    base_url: Optional[str] = None, max_consecutive_failures: int = 3
+) -> bool:
+    """
+    Check Device Screen API health with 3-strike failure detection and automatic server restart.
+    Returns True if healthy, False if failed after all retries.
+    """
+    import requests
+
+    base_url = base_url or f"http://localhost:{server_settings.DEVICE_SCREEN_API_PORT}"
+    health_url = f"{base_url}/health"
+    consecutive_failures = 0
+
+    while consecutive_failures < max_consecutive_failures:
+        try:
+            response = requests.get(health_url, timeout=3)
+            if response.status_code == 200:
+                logger.success(f"Device Screen API is healthy on {base_url}")
+                return True
+            elif response.status_code == 503:
+                consecutive_failures += 1
+                logger.warning(
+                    f"Health check failed with 503 "
+                    f"({consecutive_failures}/{max_consecutive_failures})"
+                )
+                if consecutive_failures >= max_consecutive_failures:
+                    logger.error(f"Failing {max_consecutive_failures} times, restarting servers")
+                    stop_servers(device_screen_api=True, device_hardware_bridge=True)
+                    time.sleep(2)
+                    return False
+                time.sleep(1)
+            else:
+                logger.warning(f"Health check returned unexpected status: {response.status_code}")
+                time.sleep(1)
+        except requests.exceptions.RequestException as e:
+            consecutive_failures += 1
+            logger.warning(
+                f"Health check request failed "
+                f"({consecutive_failures}/{max_consecutive_failures}): {e}"
+            )
+            if consecutive_failures >= max_consecutive_failures:
+                logger.error(f"Failing {max_consecutive_failures} times, restarting servers")
+                stop_servers(device_screen_api=True, device_hardware_bridge=True)
+                time.sleep(2)
+                return False
+            time.sleep(1)
+
+    return False
 
 
 def run_servers() -> tuple[str | None, bool]:
@@ -106,8 +157,10 @@ def run_servers() -> tuple[str | None, bool]:
             logger.error("Failed to start Device Screen API. Exiting.")
             return (None, False)
 
-    if not check_device_screen_api_health(base_url=settings.DEVICE_SCREEN_API_BASE_URL):
-        logger.error("Device Screen API health check failed. Stopping...")
+    if not check_device_screen_api_health_with_retry_logic(
+        base_url=settings.DEVICE_SCREEN_API_BASE_URL
+    ):
+        logger.error("Device Screen API health check failed after retries. Stopping...")
         if api_process:
             api_process.terminate()
         return (None, False)
@@ -126,10 +179,25 @@ async def run_automation(
     events_output_path, results_output_path = prepare_output_files()
 
     logger.info("⚙️ Starting Mobile-use servers...")
-    device_id, success = run_servers()
-    if not success:
-        logger.error("❌ Mobile-use servers failed to start. Exiting.")
-        return
+    max_restart_attempts = 3
+    restart_attempt = 0
+
+    while restart_attempt < max_restart_attempts:
+        device_id, success = run_servers()
+        if success:
+            break
+
+        restart_attempt += 1
+        if restart_attempt < max_restart_attempts:
+            logger.warning(
+                f"Server start failed, attempting restart {restart_attempt}/{max_restart_attempts}"
+            )
+            time.sleep(3)
+        else:
+            logger.error(
+                "❌ Mobile-use servers failed to start after all restart attempts. Exiting."
+            )
+            return
 
     if not device_id:
         device_id = get_first_device_id()
