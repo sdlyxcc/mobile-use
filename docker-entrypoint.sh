@@ -15,8 +15,9 @@ while true; do
         break
     fi
 
-    echo "Waiting for device authorization... (accept the prompt on your phone)"
     set +e; adb disconnect "$ADB_CONNECT_ADDR"; set -e
+
+    echo "Waiting for device authorization... (accept the prompt on your phone)"
     sleep 2
 done
 
