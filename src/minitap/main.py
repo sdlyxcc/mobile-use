@@ -1,5 +1,6 @@
 import asyncio
 import multiprocessing
+import os
 import platform
 import sys
 import time
@@ -58,7 +59,9 @@ def print_ai_response_to_stderr(graph_result: State):
 
 
 def check_device_screen_api_health_with_retry_logic(
-    base_url: Optional[str] = None, max_consecutive_failures: int = 3
+    base_url: Optional[str] = None,
+    max_consecutive_failures: int = 3,
+    delay_seconds: int = 1,
 ) -> bool:
     """
     Check Device Screen API health with 3-strike failure detection and automatic server restart.
@@ -69,6 +72,9 @@ def check_device_screen_api_health_with_retry_logic(
     base_url = base_url or f"http://localhost:{server_settings.DEVICE_SCREEN_API_PORT}"
     health_url = f"{base_url}/health"
     consecutive_failures = 0
+
+    restart_screen_api = not settings.DEVICE_SCREEN_API_BASE_URL
+    restart_hw_bridge = not settings.DEVICE_HARDWARE_BRIDGE_BASE_URL
 
     while consecutive_failures < max_consecutive_failures:
         try:
@@ -84,13 +90,16 @@ def check_device_screen_api_health_with_retry_logic(
                 )
                 if consecutive_failures >= max_consecutive_failures:
                     logger.error(f"Failing {max_consecutive_failures} times, restarting servers")
-                    stop_servers(device_screen_api=True, device_hardware_bridge=True)
+                    stop_servers(
+                        device_screen_api=restart_screen_api,
+                        device_hardware_bridge=restart_hw_bridge,
+                    )
                     time.sleep(2)
                     return False
-                time.sleep(1)
+                time.sleep(delay_seconds)
             else:
                 logger.warning(f"Health check returned unexpected status: {response.status_code}")
-                time.sleep(1)
+                time.sleep(delay_seconds)
         except requests.exceptions.RequestException as e:
             consecutive_failures += 1
             logger.warning(
@@ -99,10 +108,12 @@ def check_device_screen_api_health_with_retry_logic(
             )
             if consecutive_failures >= max_consecutive_failures:
                 logger.error(f"Failing {max_consecutive_failures} times, restarting servers")
-                stop_servers(device_screen_api=True, device_hardware_bridge=True)
+                stop_servers(
+                    device_screen_api=restart_screen_api, device_hardware_bridge=restart_hw_bridge
+                )
                 time.sleep(2)
                 return False
-            time.sleep(1)
+            time.sleep(delay_seconds)
 
     return False
 
@@ -158,7 +169,9 @@ def run_servers() -> tuple[str | None, bool]:
             return (None, False)
 
     if not check_device_screen_api_health_with_retry_logic(
-        base_url=settings.DEVICE_SCREEN_API_BASE_URL
+        base_url=settings.DEVICE_SCREEN_API_BASE_URL,
+        max_consecutive_failures=int(os.getenv("MOBILE_USE_HEALTH_RETRIES", 3)),
+        delay_seconds=int(os.getenv("MOBILE_USE_HEALTH_DELAY", 1)),
     ):
         logger.error("Device Screen API health check failed after retries. Stopping...")
         if api_process:
