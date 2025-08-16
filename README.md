@@ -22,6 +22,7 @@ Then run in your terminal:
 1. For Linux/macOS:
 
 ```bash
+# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
 minitap.sh \
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
@@ -30,8 +31,9 @@ minitap.sh \
 2. For Windows (inside a Powershell terminal):
 
 ```powershell
-powershell.exe -ExecutionPolicy Bypass -File minitap.ps1 \
-  "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
+# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
+powershell.exe -ExecutionPolicy Bypass -File minitap.ps1 `
+  "Open Gmail, find first 3 unread emails, and list their sender and subject line" `
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
 
@@ -101,8 +103,7 @@ Before you begin, ensure you have the following installed:
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/mobile-use.git
-    cd mobile-use/mobile-use
+    git clone https://github.com/your-username/mobile-use.git && cd mobile-use
     ```
 
 2.  **Create & activate the virtual environment:**
@@ -147,7 +148,7 @@ To run mobile-use, simply pass your command as an argument.
 **Example 1: Basic Command**
 
 ```bash
-python ./src/mobile-use/main.py "Go to settings and tell me my current battery level"
+python ./src/minitap/main.py "Go to settings and tell me my current battery level"
 ```
 
 **Example 2: Data Scraping**
@@ -155,7 +156,7 @@ python ./src/mobile-use/main.py "Go to settings and tell me my current battery l
 Extract specific information and get it back in a structured format. For instance, to get a list of your unread emails:
 
 ```bash
-python ./src/mobile-use/main.py \
+python ./src/minitap/main.py \
   "Open Gmail, find all unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
