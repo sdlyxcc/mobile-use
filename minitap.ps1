@@ -33,8 +33,20 @@ if ($tcp_devices) {
 } else {
     # If no TCP/IP devices found, get IP and connect
     Write-Host "No device in TCP/IP mode, enabling..."
-    $ADB_COMMAND = "ip addr show wlan0 | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
-    $device_ip_only = adb shell $ADB_COMMAND
+    
+    # Try different common Wi-Fi interface names
+    $wifi_interfaces = @("wlan0", "wlan1", "wifi0", "wifi1", "rmnet_data1")
+    $device_ip_only = $null
+    
+    foreach ($interface in $wifi_interfaces) {
+        $ADB_COMMAND = "ip -f inet addr show $interface | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
+        $ip_result = adb shell $ADB_COMMAND
+        if ($ip_result -and $ip_result.Trim() -ne "") {
+            $device_ip_only = $ip_result.Trim()
+            Write-Host "Found IP on interface $interface`: $device_ip_only"
+            break
+        }
+    }
     if (-not $device_ip_only) {
         Write-Error "Could not get device IP. Is a device connected via USB and on the same Wi-Fi network?"
         exit 1
