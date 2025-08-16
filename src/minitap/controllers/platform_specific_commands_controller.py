@@ -5,7 +5,7 @@ from adbutils import AdbDevice
 
 from minitap.clients.adb_client import adb
 from minitap.context import get_device_context
-from minitap.utils.cli_helpers import run_shell_command_on_host
+from minitap.utils.shell_utils import run_shell_command_on_host
 
 
 def get_adb_device() -> AdbDevice:
