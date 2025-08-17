@@ -1,21 +1,56 @@
-# mobile-use: automate your phone with natural language
-
 <p align="center">
-  <img src="./doc/readme-banner.gif" alt="readme-banner" width="800"/>
+  <a href="https://minitap.ai">
+    <img src="./doc/readme-banner.gif" alt="Project banner" />
+  </a>
 </p>
 
-### TL;DR
+<div align="center">
 
-**What is it?** An AI agent to control your phone (IOS/Android) with natural language.
+[![GitHub stars](https://img.shields.io/github/stars/minitap-ai/mobile-use?style=for-the-badge&color=e0a8dd)](https://github.com/minitap-ai/mobile-use/stargazers)
+[![Discord](https://img.shields.io/discord/1403058278342201394?color=7289DA&label=Discord&logo=discord&logoColor=white&style=for-the-badge)](https://discord.gg/6nSqmQ9pQs)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/license/mit)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 
-> **Note:** This quickstart, with everything dockerized, is only available for Android devices/emulators as of now.
+[minitap.ai](https://minitap.ai)
 
-**How to run?**
+</div>
+
+# mobile-use: automate your phone with natural language
+
+Mobile-use is a powerful, open-source AI agent that controls your Android or IOS device using natural language. It understands your commands and interacts with the UI to perform tasks, from sending messages to navigating complex apps.
+
+![mobile-use in Action](./doc/linkedin-demo.gif)
+
+## ✨ Features
+
+- **Natural Language Control**: Interact with your phone using your native language.
+- **UI-Aware Automation**: Intelligently navigates through app interfaces.
+- **Data Scraping**: Extract information from any app and structure it into your desired format (e.g., JSON) using a natural language description.
+- **Extensible & Customizable**: Easily configure different LLMs to power the agents that power mobile-use.
+
+## Benchmarks
+
+<p align="center">
+  <img src="./doc/benchmark.png" alt="Project banner" />
+</p>
+
+We are global number 1 Opensource pass@1 on the AndroidWorld benchmark.
+
+More info here: https://minitap.ai/research/mobile-ai-agents-benchmark
+
+## 🚀 Getting Started
+
+Ready to automate your mobile experience? Follow these steps to get mobile-use up and running.
+
+### Quick Launch (Docker)
+
+> [!NOTE]  
+> This quickstart, is only available for Android devices/emulators as of now, and you must have Docker installed.
+
+First:
 
 - Either plug your Android device and enable USB-debugging via the Developer Options
 - Or launch an Android emulator
-
-> **Note:** You must have Docker installed for this quickstart to work.
 
 Then run in your terminal:
 
@@ -37,39 +72,9 @@ powershell.exe -ExecutionPolicy Bypass -File minitap.ps1 `
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
 
-> **Note:** If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
+> [!NOTE]  
+> If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
 > Similarly, Maestro will need to install its APK on your device, which will also require you to accept the installation request.
-
-<div align="center">
-
-[![License: Apache-2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Python Version](https://img.shields.io/badge/python-3.12-blue.svg)](https://www.python.org/downloads/release/python-3120/)
-[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
-
-</div>
-
----
-
-## 💡 What is mobile-use?
-
-Mobile-use is a powerful, open-source AI agent that controls your Android or IOS device using natural language. It understands your commands and interacts with the UI to perform tasks, from sending messages to navigating complex apps.
-
-![mobile-use in Action](./doc/linkedin-demo.gif)
-
-## ✨ Features
-
-- **Natural Language Control**: Interact with your phone using your native language.
-- **UI-Aware Automation**: Intelligently navigates through app interfaces.
-- **Data Scraping**: Extract information from any app and structure it into your desired format (e.g., JSON) using a natural language description.
-- **Extensible & Customizable**: Easily configure different LLMs to power the agents that power mobile-use.
-
-## 🚀 Getting Started
-
-Ready to automate your mobile experience? Follow these steps to get mobile-use up and running.
-
-### Quick Launch (Docker)
-
-For the fastest way to get started, please see the [TL;DR](#tldr) section at the top of this document for a one-command Docker setup.
 
 ### Manual Launch (Development Mode)
 
@@ -83,7 +88,8 @@ Mobile-use currently supports the following devices:
 - **Android Simulators**: Set up through Android Studio.
 - **iOS Simulators**: Supported for macOS users.
 
-> **Note**: Physical iOS devices are not yet supported.
+> [!NOTE]  
+> Physical iOS devices are not yet supported.
 
 #### 2. Prerequisites
 
@@ -163,7 +169,8 @@ python ./src/minitap/main.py \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
 
-> 💡 **Note:** If you haven't configured a specific model, mobile-use will prompt you to choose one from the available options.
+> [!NOTE]  
+> If you haven't configured a specific model, mobile-use will prompt you to choose one from the available options.
 
 ## ❤️ Contributing
 
@@ -171,4 +178,4 @@ We love contributions! Whether you're fixing a bug, adding a feature, or improvi
 
 ## 📜 License
 
-This project is licensed under the Apache 2.0 License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
