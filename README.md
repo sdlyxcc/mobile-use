@@ -1,8 +1,10 @@
-<p align="center">
-  <a href="https://minitap.ai">
-    <img src="./doc/readme-banner.gif" alt="Project banner" />
-  </a>
-</p>
+# mobile-use: automate your phone with natural language
+  
+![mobile-use in Action](./doc/linkedin-demo.gif)
+
+
+
+Mobile-use is a powerful, open-source AI agent that controls your Android or IOS device using natural language. It understands your commands and interacts with the UI to perform tasks, from sending messages to navigating complex apps.
 
 <div align="center">
 
@@ -11,22 +13,14 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg?style=for-the-badge)](https://opensource.org/license/mit)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=for-the-badge)](CONTRIBUTING.md)
 
-[minitap.ai](https://minitap.ai)
-
 </div>
-
-# mobile-use: automate your phone with natural language
-
-Mobile-use is a powerful, open-source AI agent that controls your Android or IOS device using natural language. It understands your commands and interacts with the UI to perform tasks, from sending messages to navigating complex apps.
-
-![mobile-use in Action](./doc/linkedin-demo.gif)
 
 ## ✨ Features
 
-- **Natural Language Control**: Interact with your phone using your native language.
-- **UI-Aware Automation**: Intelligently navigates through app interfaces.
-- **Data Scraping**: Extract information from any app and structure it into your desired format (e.g., JSON) using a natural language description.
-- **Extensible & Customizable**: Easily configure different LLMs to power the agents that power mobile-use.
+- 🗣️ **Natural Language Control**: Interact with your phone using your native language.
+- 📱 **UI-Aware Automation**: Intelligently navigates through app interfaces.
+- 📊 **Data Scraping**: Extract information from any app and structure it into your desired format (e.g., JSON) using a natural language description.
+- 🔧 **Extensible & Customizable**: Easily configure different LLMs to power the agents that power mobile-use.
 
 ## Benchmarks
 
