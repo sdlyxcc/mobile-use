@@ -57,7 +57,6 @@ Then run in your terminal:
 1. For Linux/macOS:
 
 ```bash
-# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
 mobile-use.sh \
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
@@ -66,11 +65,14 @@ mobile-use.sh \
 2. For Windows (inside a Powershell terminal):
 
 ```powershell
-# At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`. It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
 powershell.exe -ExecutionPolicy Bypass -File mobile-use.ps1 `
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" `
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
+
+> [!IMPORTANT]  
+> At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`
+> It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
 
 > [!NOTE]  
 > If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
