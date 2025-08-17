@@ -2,6 +2,7 @@ from pathlib import Path
 
 from jinja2 import Template
 from langchain_core.messages import SystemMessage
+
 from mobile_use.agents.orchestrator.types import OrchestratorOutput, OrchestratorStatus
 from mobile_use.agents.planner.utils import (
     all_completed,
@@ -53,7 +54,7 @@ async def orchestrator_node(state: State):
         SystemMessage(content=system_message),
     ]
 
-    llm = get_llm(agent_node="orchestrator", temperature=0.4)
+    llm = get_llm(agent_node="orchestrator", temperature=1)
     llm = llm.with_structured_output(OrchestratorOutput)
     response: OrchestratorOutput = await llm.ainvoke(messages)  # type: ignore
 
