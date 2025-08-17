@@ -42,7 +42,7 @@ dev = [
 ]
 
 [project.scripts]
-mobile-use = "mobile-use.main:cli"
+mobile-use = "mobile_use.main:cli"
 
 [project.urls]
 "Homepage" = "https://minitap.ai/"
