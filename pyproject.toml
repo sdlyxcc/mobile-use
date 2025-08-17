@@ -1,5 +1,5 @@
 [project]
-name = "minitap"
+name = "mobile-use"
 version = "0.0.1"
 description = "AI-powered multi-agent system that automates real Android and iOS devices through low-level control using LangGraph."
 readme = "README.md"
@@ -42,11 +42,11 @@ dev = [
 ]
 
 [project.scripts]
-minitap = "minitap.main:cli"
+mobile-use = "mobile-use.main:cli"
 
 [project.urls]
 "Homepage" = "https://minitap.ai/"
-"Source" = "https://github.com/minitap-ai/minitap"
+"Source" = "https://github.com/minitap-ai/mobile-use"
 
 [build-system]
 requires = ["uv_build>=0.7.20,<0.8.0"]

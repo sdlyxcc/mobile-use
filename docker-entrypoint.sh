@@ -21,4 +21,4 @@ while true; do
     sleep 2
 done
 
-minitap "$@"
+mobile-use "$@"
