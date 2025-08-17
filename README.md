@@ -42,6 +42,20 @@ More info here: https://minitap.ai/research/mobile-ai-agents-benchmark
 
 Ready to automate your mobile experience? Follow these steps to get mobile-use up and running.
 
+1.  **Set up Environment Variables:**
+    Copy the example `.env.example` file to `.env` and add your API keys. At least an OpenAI key is required.
+
+    ```bash
+    cp .env.example .env
+    ```
+
+2.  **(Optional) Customize LLM Configuration:**
+    To use different models or providers, create your own LLM configuration file.
+    ```bash
+    cp llm-config.override.template.jsonc llm-config.override.jsonc
+    ```
+    Then, edit `llm-config.override.jsonc` to fit your needs.
+
 ### Quick Launch (Docker)
 
 > [!NOTE]  
@@ -57,7 +71,8 @@ Then run in your terminal:
 1. For Linux/macOS:
 
 ```bash
-mobile-use.sh \
+chmod +x mobile-use.sh
+./mobile-use.sh \
   "Open Gmail, find first 3 unread emails, and list their sender and subject line" \
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
@@ -113,10 +128,12 @@ Before you begin, ensure you have the following installed:
 1.  **Clone the repository:**
 
     ```bash
-    git clone https://github.com/your-username/mobile-use.git && cd mobile-use
+    git clone https://github.com/minitap-ai/mobile-use.git && cd mobile-use
     ```
 
-2.  **Create & activate the virtual environment:**
+2.  [**Setup environment variables**](#-getting-started)
+
+3.  **Create & activate the virtual environment:**
 
     ```bash
     # This will create a .venv directory using the Python version in .python-version
@@ -129,27 +146,11 @@ Before you begin, ensure you have the following installed:
     .venv\Scripts\activate
     ```
 
-3.  **Install dependencies:**
+4.  **Install dependencies:**
     ```bash
     # Sync with the locked dependencies for a consistent setup
     uv sync
     ```
-
-### 3. Configuration
-
-1.  **Set up Environment Variables:**
-    Copy the example `.env.example` file to `.env` and add your API keys. An OpenAI key is required for out-of-the-box functionality.
-
-    ```bash
-    cp .env.example .env
-    ```
-
-2.  **(Optional) Customize LLM Configuration:**
-    To use different models or providers, create your own LLM configuration file.
-    ```bash
-    cp llm-config.override.template.jsonc llm-config.override.jsonc
-    ```
-    Then, edit `llm-config.override.jsonc` to fit your needs.
 
 ## 👨‍💻 Usage
 
