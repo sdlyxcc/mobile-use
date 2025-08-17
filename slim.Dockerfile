@@ -37,10 +37,10 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Use non-root user
-RUN useradd -m -s /bin/bash --create-home minitap && \
-    mkdir -p /home/minitap/.android && \
-    chown -R minitap:minitap /home/minitap/.android
-USER minitap
+RUN useradd -m -s /bin/bash --create-home mobile-use && \
+    mkdir -p /home/mobile-use/.android && \
+    chown -R mobile-use:mobile-use /home/mobile-use/.android
+USER mobile-use
 
 WORKDIR /app
 
@@ -51,5 +51,5 @@ COPY --from=builder --chown=python:python /python /python
 COPY --from=builder --chown=app:app /app /app
 ENV PATH="/app/.venv/bin:$PATH"
 
-COPY --chown=minitap:minitap docker-entrypoint.sh /app/docker-entrypoint.sh
+COPY --chown=mobile-use:mobile-use docker-entrypoint.sh /app/docker-entrypoint.sh
 ENTRYPOINT ["/app/docker-entrypoint.sh"]

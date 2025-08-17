@@ -8,18 +8,18 @@ RUN apt-get update && \
     apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Use non-root user
-RUN useradd -m -s /bin/bash --create-home minitap && \
-    chown -R minitap:minitap /opt/ && \
-    mkdir -p /home/minitap/.android && \
-    chown -R minitap:minitap /home/minitap/.android
-USER minitap
+RUN useradd -m -s /bin/bash --create-home mobile-use && \
+    chown -R mobile-use:mobile-use /opt/ && \
+    mkdir -p /home/mobile-use/.android && \
+    chown -R mobile-use:mobile-use /home/mobile-use/.android
+USER mobile-use
 
 # Download & install Maestro
 RUN mkdir -p /opt/maestro && \
-    wget -q -O /tmp/${MAESTRO_VERSION} "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" && \
+    wget -q -O /tmp/${MAESTRO_VERSION} "https://github.com/mobile-use-use-use-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" && \
     unzip -q /tmp/${MAESTRO_VERSION} -d /opt/ && \
     rm /tmp/${MAESTRO_VERSION}
 ENV PATH="/opt/maestro/bin:${PATH}"
 
-COPY --chown=minitap:minitap docker-entrypoint.sh /docker-entrypoint.sh
+COPY --chown=mobile-use:mobile-use docker-entrypoint.sh /docker-entrypoint.sh
 ENTRYPOINT ["/docker-entrypoint.sh"]
