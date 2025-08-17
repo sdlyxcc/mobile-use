@@ -1,7 +1,7 @@
 # mobile-use: automate your phone with natural language
 
 <p align="center">
-  <img src="./doc/readme-banner-1280x320.png" alt="Project banner" />
+  <img src="./doc/readme-banner.gif" alt="readme-banner" width="800"/>
 </p>
 
 ### TL;DR
@@ -88,9 +88,11 @@ Mobile-use currently supports the following devices:
 #### 2. Prerequisites
 
 For Android:
+
 - **[Android Debug Bridge (ADB)](https://developer.android.com/studio/releases/platform-tools)**: A tool to connect to your device.
 
 For iOS:
+
 - **[Xcode](https://developer.apple.com/xcode/)**: Apple's IDE for iOS development.
 
 Before you begin, ensure you have the following installed:
