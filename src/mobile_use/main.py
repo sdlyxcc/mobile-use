@@ -9,6 +9,9 @@ from typing import Optional
 
 import typer
 from langchain_core.messages import AIMessage
+from rich.console import Console
+from typing_extensions import Annotated
+
 from mobile_use.agents.outputter.outputter import outputter
 from mobile_use.config import (
     OutputConfig,
@@ -43,8 +46,6 @@ from mobile_use.utils.media import (
 )
 from mobile_use.utils.recorder import log_agent_thoughts
 from mobile_use.utils.time import convert_timestamp_to_str
-from rich.console import Console
-from typing_extensions import Annotated
 
 app = typer.Typer(add_completion=False, pretty_exceptions_enable=False)
 logger = get_logger(__name__)
@@ -59,11 +60,11 @@ def print_ai_response_to_stderr(graph_result: State):
 
 def check_device_screen_api_health_with_retry_logic(
     base_url: Optional[str] = None,
-    max_consecutive_failures: int = 3,
+    max_consecutive_failures: int = 5,
     delay_seconds: int = 1,
 ) -> bool:
     """
-    Check Device Screen API health with 3-strike failure detection and automatic server restart.
+    Check Device Screen API health with 5-strike failure detection and automatic server restart.
     Returns True if healthy, False if failed after all retries.
     """
     import requests
@@ -169,7 +170,7 @@ def run_servers() -> tuple[str | None, bool]:
 
     if not check_device_screen_api_health_with_retry_logic(
         base_url=settings.DEVICE_SCREEN_API_BASE_URL,
-        max_consecutive_failures=int(os.getenv("MOBILE_USE_HEALTH_RETRIES", 3)),
+        max_consecutive_failures=int(os.getenv("MOBILE_USE_HEALTH_RETRIES", 5)),
         delay_seconds=int(os.getenv("MOBILE_USE_HEALTH_DELAY", 1)),
     ):
         logger.error("Device Screen API health check failed after retries. Stopping...")
