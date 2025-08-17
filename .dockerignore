@@ -32,7 +32,7 @@ build/
 assets/
 *.Dockerfile
 *.dockerignore
-minitap.ps1
-minitap.sh
+mobile-use.ps1
+mobile-use.sh
 llm-config.override.jsonc
 docker-compose.yml

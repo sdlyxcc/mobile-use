@@ -1,6 +1,6 @@
 .env
 __pycache__
-**/minitap.egg-info
+**/mobile-use.egg-info
 .vscode/settings.json
 .venv/
 
