@@ -16,7 +16,7 @@ USER mobile-use
 
 # Download & install Maestro
 RUN mkdir -p /opt/maestro && \
-    wget -q -O /tmp/${MAESTRO_VERSION} "https://github.com/mobile-use-use-use-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" && \
+    wget -q -O /tmp/${MAESTRO_VERSION} "https://github.com/mobile-dev-inc/maestro/releases/download/cli-${MAESTRO_VERSION}/maestro.zip" && \
     unzip -q /tmp/${MAESTRO_VERSION} -d /opt/ && \
     rm /tmp/${MAESTRO_VERSION}
 ENV PATH="/opt/maestro/bin:${PATH}"
