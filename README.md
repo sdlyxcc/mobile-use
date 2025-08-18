@@ -64,6 +64,10 @@ First:
 - Either plug your Android device and enable USB-debugging via the Developer Options
 - Or launch an Android emulator
 
+> [!IMPORTANT]  
+> At some point, the terminal will HANG, and Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`
+> It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
+
 Then run in your terminal:
 
 1. For Linux/macOS:
@@ -83,13 +87,35 @@ powershell.exe -ExecutionPolicy Bypass -File mobile-use.ps1 `
   --output-description "A JSON list of objects, each with 'sender' and 'subject' keys"
 ```
 
-> [!IMPORTANT]  
-> At some point, Maestro will ask you `Maestro CLI would like to collect anonymous usage data to improve the product.`
-> It's up to you whether you accept (i.e enter 'Y') or not (i.e. enter 'n').
-
 > [!NOTE]  
 > If using your own device, make sure to accept the ADB-related connection requests that will pop up on your device.
 > Similarly, Maestro will need to install its APK on your device, which will also require you to accept the installation request.
+
+#### 🧰 Troubleshooting
+
+The script will try to connect to your device via IP.  
+Therefore, your device **must be connected to the same Wi-Fi network as your computer**.
+
+##### 1. No device IP found
+
+If the script fails with the following message:
+
+```
+Could not get device IP. Is a device connected via USB and on the same Wi-Fi network?
+```
+
+Then it couldn't find one of the common Wi-Fi interfaces on your device.  
+Therefore, you must determine what WLAN interface your phone is using via `adb shell ip addr show up`.
+Then add the `--interface <YOUR_INTERFACE_NAME>` option to the script.
+
+##### 2. Failed to connect to <DEVICE_IP>:5555 inside Docker
+
+This is most probably an issue with your firewall blocking the connection. Therefore there is no clear fix for this.
+
+##### 3. Failed to pull GHCR docker images (unauthorized)
+
+Since UV docker images rely on a `ghcr.io` public repositories, you may have an expired token if you used `ghcr.io` before for private repositories.  
+Try running `docker logout ghcr.io` and then run the script again.
 
 ### Manual Launch (Development Mode)
 
