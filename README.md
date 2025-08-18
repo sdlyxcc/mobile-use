@@ -1,7 +1,6 @@
 # mobile-use: automate your phone with natural language
   
-![mobile-use in Action](./doc/linkedin-demo.gif)
-
+![mobile-use in Action](./doc/linkedin-demo-with-text.gif)
 
 
 Mobile-use is a powerful, open-source AI agent that controls your Android or IOS device using natural language. It understands your commands and interacts with the UI to perform tasks, from sending messages to navigating complex apps.
@@ -31,6 +30,8 @@ Mobile-use is a powerful, open-source AI agent that controls your Android or IOS
 We are global number 1 Opensource pass@1 on the AndroidWorld benchmark.
 
 More info here: https://minitap.ai/research/mobile-ai-agents-benchmark
+
+The official leaderboard is available [here](https://docs.google.com/spreadsheets/d/1cchzP9dlTZ3WXQTfYNhh3avxoLipqHN75v1Tb86uhHo/edit?pli=1&gid=0#gid=0)
 
 ## 🚀 Getting Started
 
