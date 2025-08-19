@@ -47,14 +47,11 @@ def erase_text(
     new_text_value = None
     nb_char_erased = -1
     if latest_ui_hierarchy is not None:
-        print("Looking for element with resource id: ", input_text_resource_id)
         text_input_element = find_element_by_resource_id(
             ui_hierarchy=latest_ui_hierarchy, resource_id=input_text_resource_id
         )
-        print("Found element: ", text_input_element)
         if text_input_element:
             previous_text_value = text_input_element.get("text", None)
-        print("Previous text value: ", previous_text_value)
 
     output = erase_text_controller(nb_chars=nb_chars)
     has_failed = output is not None
@@ -70,7 +67,6 @@ def erase_text(
         )
         if text_input_element:
             new_text_value = text_input_element.get("text", None)
-        print("New text value: ", new_text_value)
 
     if previous_text_value is not None and new_text_value is not None:
         if previous_text_value == new_text_value:
