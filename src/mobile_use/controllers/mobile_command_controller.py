@@ -1,14 +1,17 @@
+import uuid
 from enum import Enum
 from typing import Literal, Optional, Union
 
 import yaml
+from langgraph.types import Command
+from pydantic import BaseModel, ConfigDict, Field
+from requests import JSONDecodeError
+
 from mobile_use.clients.device_hardware_client import get_client as get_device_hardware_client
 from mobile_use.clients.screen_api_client import get_client as get_screen_api_client
 from mobile_use.config import settings
 from mobile_use.utils.errors import ControllerErrors
 from mobile_use.utils.logger import get_logger
-from pydantic import BaseModel, ConfigDict, Field
-from requests import JSONDecodeError
 
 screen_api = get_screen_api_client(settings.DEVICE_SCREEN_API_BASE_URL)
 device_hardware_api = get_device_hardware_client(settings.DEVICE_HARDWARE_BRIDGE_BASE_URL)
@@ -316,9 +319,37 @@ def run_flow_with_wait_for_animation_to_end(base_flow: list, dry_run: bool = Fal
 
 
 if __name__ == "__main__":
-    swipe(
-        SwipeRequest(
-            swipe_mode="LEFT",
-            duration=700,
-        )
+    # long press, erase
+    # input_text(text="test")
+    # erase_text()
+    screen_data = get_screen_data()
+    from mobile_use.graph.state import State
+    from mobile_use.tools.mobile.erase_text import erase_text as erase_text_tool
+
+    dummy_state = State(
+        latest_ui_hierarchy=screen_data.elements,
+        messages=[],
+        initial_goal="",
+        subgoal_plan=[],
+        latest_screenshot_base64=screen_data.base64,
+        focused_app_info=None,
+        device_date="",
+        structured_decisions=None,
+        executor_retrigger=False,
+        executor_failed=False,
+        executor_messages=[],
+        cortex_last_thought="",
+        agents_thoughts=[],
     )
+
+    # invoke erase_text tool
+    command_output: Command = erase_text_tool.invoke(
+        {
+            "tool_call_id": uuid.uuid4().hex,
+            "agent_thought": "",
+            "input_text_resource_id": "com.google.android.settings.intelligence:id/open_search_view_edit_text",
+            "state": dummy_state,
+            "executor_metadata": None,
+        }
+    )
+    print(command_output)
