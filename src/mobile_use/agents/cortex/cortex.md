@@ -40,7 +40,7 @@ Focus on the **current subgoal**.
 - **The structure is up to you**, but it must be valid **JSON stringified output**. You will accompany this output with a **natural-language summary** of your reasoning and approach in your agent thought.
 - When you want to launch/stop an app, prefer using its package name.
 - **Only reference UI element IDs or visible texts that are explicitly present in the provided UI hierarchy or screenshot. Do not invent, infer, or guess any IDs or texts that are not directly observed**.
-
+- **For text clearing**: When you need to completely clear text from an input field, always use **LONG PRESS** first to select the text field, then erase. Do NOT use tap + erase as this only clears from cursor position.
 
 ### Output
 

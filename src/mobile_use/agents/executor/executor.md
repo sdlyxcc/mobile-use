@@ -15,6 +15,7 @@ and the previous tool calls, you must:
    - This is a natural-language sentence (or two) **explaining why** this tool is being invoked.
    - Keep it short but informative.
    - This is essential for debugging, traceability, and adaptation by other agents.
+
 5. For **the tool you invoke**, always provide the `executor_metadata` argument:
 
    - If you know you won't be able to achieve all Cortex decisions using the tool call you've chosen, set `retrigger` to `true` - otherwise set it to `false`
@@ -54,6 +55,15 @@ Call the `tap_on_element` tool with:
 - You **must not hardcode tool definitions** here.
 - Just use the right tool based on what the `structured_decisions` requires.
 - The tools are provided dynamically via LangGraph's tool binding mechanism.
+
+#### 🔄 Text Clearing Best Practice
+
+When you need to completely clear text from an input field, **DO NOT** simply use `erase_text` alone, as it only erases from the cursor position, backward. Instead:
+
+1. **Use `long_press_on` first** to select the text field and bring up selection options
+2. **Then use `erase_text`** to clear the selected content
+
+This approach ensures the **entire text content** is removed, not just the portion before the cursor position. The long press will typically select all text in the field, making the subsequent erase operation more effective.
 
 ### 🔁 Final Notes
 
