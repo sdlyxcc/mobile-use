@@ -1,3 +1,11 @@
+[CmdletBinding(PositionalBinding=$false)]
+param (
+    [string]$Interface = "",
+    [Parameter(ValueFromRemainingArguments)]
+    [string[]]$RemainingArgs
+)
+
+
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 
@@ -105,16 +113,22 @@ if ($tcp_devices) {
     if (Is-EmulatorDevice -DeviceSerial "$selected_device_serial") {
         $device_ip_only = "host.docker.internal"
     } else {
-        # Try different common Wi-Fi interface names
-        $wifi_interfaces = @("wlan0", "wlan1", "wifi0", "wifi1", "rmnet_data1")
         $device_ip_only = $null
+        $wifi_interfaces = @()
+        if (-not [string]::IsNullOrEmpty($Interface)) {
+            Write-Host "Using specified network interface: $Interface"
+            $wifi_interfaces = @($Interface)
+        } else {
+            # Try different common Wi-Fi interface names
+            $wifi_interfaces = @("wlan0", "wlan1", "wifi0", "wifi1", "rmnet_data1", "swlan0", "swlan1")
+        }
 
-        foreach ($interface in $wifi_interfaces) {
-            $ADB_COMMAND = "ip -f inet addr show $interface | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
+        foreach ($interface_item in $wifi_interfaces) {
+            $ADB_COMMAND = "ip -f inet addr show $interface_item | grep 'inet ' | awk '{print `$2}' | cut -d/ -f1"
             $ip_result = adb -s $selected_device_serial shell $ADB_COMMAND
             if ($ip_result -and $ip_result.Trim() -ne "") {
                 $device_ip_only = $ip_result.Trim()
-                Write-Host "Found IP on interface $interface`: $device_ip_only"
+                Write-Host "Found IP on interface $interface_item`: $device_ip_only"
                 break
             }
         }
@@ -133,4 +147,8 @@ if ($tcp_devices) {
 Write-Output "Device IP is: $device_ip"
 $env:ADB_CONNECT_ADDR = "$device_ip"
 
-docker compose run --build --rm --remove-orphans -it mobile-use-full-ip $args
+if (-not (Test-Path "./llm-config.override.jsonc")) {
+    [System.IO.File]::WriteAllText("./llm-config.override.jsonc", "{}")
+}
+
+docker compose run --build --rm --remove-orphans -it mobile-use-full-ip $RemainingArgs

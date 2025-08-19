@@ -2,6 +2,24 @@
 
 set -eu
 
+network_interface=""
+
+# All arguments that are not script options will be passed to docker compose
+docker_args=()
+
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    -i|--interface)
+      network_interface="$2"
+      shift 2
+      ;;
+    *)
+      docker_args+=("$1")
+      shift
+      ;;
+  esac
+done
+
 select_usb_device() {
     local serials
     serials=($(adb devices | grep -w "device" | awk '{print $1}'))
@@ -87,9 +105,14 @@ else
     if is_emulator_device "$selected_device_serial"; then
         device_ip_only="host.docker.internal"
     else
-        # Try different common Wi-Fi interface names
-        wifi_interfaces=("wlan0" "wlan1" "wifi0" "wifi1" "rmnet_data1")
         device_ip_only=""
+        if [ -n "$network_interface" ]; then
+            echo "Using specified network interface: $network_interface"
+            wifi_interfaces=("$network_interface")
+        else
+            # Try different common Wi-Fi interface names
+            wifi_interfaces=("wlan0" "wlan1" "wifi0" "wifi1" "rmnet_data1", "swlan0", "swlan1")
+        fi
 
         for interface in "${wifi_interfaces[@]}"; do
             ADB_COMMAND="ip -f inet addr show $interface | grep 'inet ' | awk '{print \$2}' | cut -d/ -f1"
@@ -114,4 +137,8 @@ fi
 echo "Device IP is: $device_ip"
 export ADB_CONNECT_ADDR="$device_ip"
 
-docker compose run --build --rm --remove-orphans -it mobile-use-full-ip "$@"
+if [ ! -f "./llm-config.override.jsonc" ]; then
+    echo "{}" > "./llm-config.override.jsonc"
+fi
+
+docker compose run --build --rm --remove-orphans -it mobile-use-full-ip "${docker_args[@]}"
