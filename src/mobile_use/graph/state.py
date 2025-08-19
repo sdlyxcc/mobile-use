@@ -3,11 +3,12 @@ from typing import Union
 from langchain_core.messages import AIMessage, AnyMessage
 from langgraph.graph import add_messages
 from langgraph.prebuilt.chat_agent_executor import AgentStatePydantic
+from typing_extensions import Annotated, Optional
+
 from mobile_use.agents.planner.types import Subgoal
 from mobile_use.context import is_execution_setup_set
 from mobile_use.utils.logger import get_logger
 from mobile_use.utils.recorder import record_interaction
-from typing_extensions import Annotated, Optional
 
 logger = get_logger(__name__)
 
@@ -35,7 +36,9 @@ class State(AgentStatePydantic):
 
     # contextor related keys
     latest_screenshot_base64: Annotated[Optional[str], "Latest screenshot of the device", take_last]
-    latest_ui_hierarchy: Annotated[Optional[list], "Latest UI hierarchy of the device", take_last]
+    latest_ui_hierarchy: Annotated[
+        Optional[list[dict]], "Latest UI hierarchy of the device", take_last
+    ]
     focused_app_info: Annotated[Optional[str], "Focused app info", take_last]
     device_date: Annotated[Optional[str], "Date of the device", take_last]
 
