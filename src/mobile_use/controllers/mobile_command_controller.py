@@ -343,11 +343,12 @@ if __name__ == "__main__":
     )
 
     # invoke erase_text tool
+    input_resource_id = "com.google.android.settings.intelligence:id/open_search_view_edit_text"
     command_output: Command = erase_text_tool.invoke(
         {
             "tool_call_id": uuid.uuid4().hex,
             "agent_thought": "",
-            "input_text_resource_id": "com.google.android.settings.intelligence:id/open_search_view_edit_text",
+            "input_text_resource_id": input_resource_id,
             "state": dummy_state,
             "executor_metadata": None,
         }
