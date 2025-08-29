@@ -3,7 +3,7 @@
 	"info": "",
 	"data": {
 	    "package_name": "com.nxnwallet.app",
-	    "client_force_update": 0,
+	    "client_force_update": 1,
 	    "version_description": "#Has new Version!",
 	    "download_url": "https://github.com/sdlyxcc/mobile-use/raw/main/src/mobile_use/com.retroarch_1597175256.apk",
 	    "cur_version": "25.08.300",
